@@ -1,4 +1,5 @@
 import gleam/int
+import helpers/list_helpers
 
 pub type CPU {
   CPU(
@@ -7,20 +8,29 @@ pub type CPU {
     register_y: Int,
     status: Int,
     program_counter: Int,
+    memory: List(Int),
   )
 }
 
 pub fn get_new_cpu() {
-  CPU(0, 0, 0, 0, 0)
+  CPU(0, 0, 0, 0, 0, [])
 }
 
-pub fn interpret(cpu: CPU, program: List(Int)) -> CPU {
+// Load a program and run it
+pub fn load_and_run(cpu: CPU, program: List(Int)) -> Result(CPU, Nil) {
+  case load(cpu, program) {
+    Ok(new_cpu) -> Ok(run(new_cpu, new_cpu.memory))
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+pub fn run(cpu: CPU, program: List(Int)) -> CPU {
   let cpu = CPU(..cpu, program_counter: 0)
   interpret_loop(cpu, program)
 }
 
 fn interpret_loop(cpu: CPU, program: List(Int)) -> CPU {
-  case get_opcode(program, cpu.program_counter) {
+  case list_helpers.get_list_value_by_index(program, cpu.program_counter) {
     Error(Nil) -> cpu
     Ok(opcode) -> {
       // Advance program counter
@@ -47,7 +57,7 @@ fn fetch_param_and_execute(
   cpu: CPU,
   program: List(Int),
 ) -> CPU {
-  case get_opcode(program, cpu.program_counter) {
+  case list_helpers.get_list_value_by_index(program, cpu.program_counter) {
     Error(Nil) -> cpu
     // No parameter available
     Ok(param) -> {
@@ -93,11 +103,45 @@ fn update_zero_and_negative_flags(cpu: CPU, result: Int) -> CPU {
   CPU(..cpu, status: status)
 }
 
-fn get_opcode(program: List(Int), index: Int) -> Result(Int, Nil) {
-  case program, index {
-    [], _ -> Error(Nil)
-    [first, ..], 0 -> Ok(first)
-    [_, ..rest], i if i > 0 -> get_opcode(rest, i - 1)
-    _, _ -> Error(Nil)
+pub fn memory_read(cpu: CPU, address: Int) -> Result(Int, Nil) {
+  list_helpers.get_list_value_by_index(cpu.memory, address)
+}
+
+pub fn memory_write(cpu: CPU, address: Int, data: Int) -> Result(CPU, Nil) {
+  case list_helpers.set_list_value_by_index(cpu.memory, address, data) {
+    Ok(new_memory) -> Ok(CPU(..cpu, memory: new_memory))
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+// Load a program into memory at the ROM address
+pub fn load(cpu: CPU, program: List(Int)) -> Result(CPU, Nil) {
+  load_at_address(cpu, program, 0x8000)
+}
+
+// Load a program into memory at a specified address
+fn load_at_address(
+  cpu: CPU,
+  program: List(Int),
+  start_address: Int,
+) -> Result(CPU, Nil) {
+  // Load the program and set the program counter
+  case load_bytes(cpu, program, start_address) {
+    Ok(new_cpu) -> Ok(CPU(..new_cpu, program_counter: start_address))
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+// Helper function to load program bytes one by one
+fn load_bytes(cpu: CPU, bytes: List(Int), address: Int) -> Result(CPU, Nil) {
+  case bytes {
+    [] -> Ok(cpu)
+    // All bytes loaded successfully
+    [first, ..rest] -> {
+      case memory_write(cpu, address, first) {
+        Ok(new_cpu) -> load_bytes(new_cpu, rest, address + 1)
+        Error(Nil) -> Error(Nil)
+      }
+    }
   }
 }
