@@ -1,5 +1,10 @@
+import cpu
 import gleam/io
 
 pub fn main() {
-  io.println("Hello from gleamness!")
+  let cpu = cpu.get_new_cpu()
+
+  let result_cpu = cpu.interpret(cpu, [0xa9, 0xc0, 0xaa, 0xe8, 0x00])
+
+  io.debug(result_cpu)
 }

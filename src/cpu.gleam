@@ -1,11 +1,17 @@
 import gleam/int
 
 pub type CPU {
-  CPU(register_a: Int, register_y: Int, status: Int, program_counter: Int)
+  CPU(
+    register_a: Int,
+    register_x: Int,
+    register_y: Int,
+    status: Int,
+    program_counter: Int,
+  )
 }
 
 pub fn get_new_cpu() {
-  CPU(0, 0, 0, 0)
+  CPU(0, 0, 0, 0, 0)
 }
 
 pub fn interpret(cpu: CPU, program: List(Int)) -> CPU {
@@ -22,8 +28,9 @@ fn interpret_loop(cpu: CPU, program: List(Int)) -> CPU {
 
       // Handle opcode
       let cpu = case opcode {
-        0xA9 -> fetch_param_and_execute(cpu, program, lda)
+        0xA9 -> lda |> fetch_param_and_execute(cpu, program)
         0xAA -> tax(cpu)
+        0xE8 -> inx(cpu)
         // BRK instruction - just return the current CPU state
         0x00 -> cpu
         _ -> cpu
@@ -36,9 +43,9 @@ fn interpret_loop(cpu: CPU, program: List(Int)) -> CPU {
 
 // Helper to fetch a parameter and execute a single-parameter instruction
 fn fetch_param_and_execute(
+  execute: fn(CPU, Int) -> CPU,
   cpu: CPU,
   program: List(Int),
-  execute: fn(CPU, Int) -> CPU,
 ) -> CPU {
   case get_opcode(program, cpu.program_counter) {
     Error(Nil) -> cpu
@@ -58,9 +65,15 @@ fn lda(cpu: CPU, value: Int) -> CPU {
   update_zero_and_negative_flags(cpu, value)
 }
 
-// Transfer Accumulator to X (using register_y as X)
+// Increment X register
+fn inx(cpu: CPU) -> CPU {
+  let cpu = CPU(..cpu, register_x: cpu.register_x + 1)
+  update_zero_and_negative_flags(cpu, cpu.register_x)
+}
+
+// Transfer Accumulator to X
 fn tax(cpu: CPU) -> CPU {
-  let cpu = CPU(..cpu, register_y: cpu.register_a)
+  let cpu = CPU(..cpu, register_x: cpu.register_a)
   update_zero_and_negative_flags(cpu, cpu.register_y)
 }
 
@@ -83,7 +96,8 @@ fn update_zero_and_negative_flags(cpu: CPU, result: Int) -> CPU {
 fn get_opcode(program: List(Int), index: Int) -> Result(Int, Nil) {
   case program, index {
     [], _ -> Error(Nil)
-    [first, _], 0 -> Ok(first)
-    [_, ..rest], i -> get_opcode(rest, i - 1)
+    [first, ..], 0 -> Ok(first)
+    [_, ..rest], i if i > 0 -> get_opcode(rest, i - 1)
+    _, _ -> Error(Nil)
   }
 }
