@@ -27,7 +27,7 @@ pub fn update_flags(cpu: CPU, result: Int, flags_to_update: List(Int)) -> CPU {
 
         // Negative flag - set if bit 7 is set
         f if f == flag_negative -> {
-          case int.bitwise_and(result, 0b1000_0000) != 0 {
+          case int.bitwise_and(result, 0b10000000) != 0 {
             True -> int.bitwise_or(status, flag_negative)
             False ->
               int.bitwise_and(

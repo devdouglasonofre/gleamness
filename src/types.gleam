@@ -43,28 +43,28 @@ pub type AddressingMode {
 
 // CPU status register flags (each bit in the status register)
 // Carry Flag (C)
-pub const flag_carry = 0b0000_0001
+pub const flag_carry = 0b00000001
 
 // Zero Flag (Z)
-pub const flag_zero = 0b0000_0010
+pub const flag_zero = 0b00000010
 
 // Interrupt Disable (I)
-pub const flag_interrupt_disable = 0b0000_0100
+pub const flag_interrupt_disable = 0b00000100
 
 // Decimal Mode (D)
-pub const flag_decimal_mode = 0b0000_1000
+pub const flag_decimal_mode = 0b00001000
 
 // Break Command (B)
-pub const flag_break = 0b0001_0000
+pub const flag_break = 0b00010000
 
 // Unused, always set to 1
-pub const flag_unused = 0b0010_0000
+pub const flag_unused = 0b00100000
 
 // Overflow Flag (V)
-pub const flag_overflow = 0b0100_0000
+pub const flag_overflow = 0b01000000
 
 // Negative Flag (N)
-pub const flag_negative = 0b1000_0000
+pub const flag_negative = 0b10000000
 
 // Stack constants
 

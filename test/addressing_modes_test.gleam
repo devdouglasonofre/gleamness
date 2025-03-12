@@ -79,7 +79,7 @@ pub fn tax_updates_correct_flags_test() {
   |> should.equal(0x80)
 
   // Negative flag should be set (bit 7)
-  let negative_flag_set = int.bitwise_and(result_cpu.status, 0b1000_0000) != 0
+  let negative_flag_set = int.bitwise_and(result_cpu.status, 0b10000000) != 0
   negative_flag_set
   |> should.equal(True)
 }

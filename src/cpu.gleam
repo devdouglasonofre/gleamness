@@ -1,5 +1,4 @@
 import addressing
-import bus
 import gleam/option.{type Option, None, Some}
 import helpers/instruction_helpers
 import helpers/list_helpers
@@ -12,7 +11,7 @@ import instructions/logic
 import instructions/stack_ops
 import instructions/transfer
 import memory
-import types.{type CPU, type CpuInstruction, flag_unused, stack_reset}
+import types.{type CPU, type CpuInstruction, Bus, flag_unused, stack_reset}
 
 // Initialize a new CPU with default state
 pub fn get_new_cpu() -> CPU {
@@ -28,7 +27,7 @@ pub fn get_new_cpu() -> CPU {
     program_counter: 0,
     stack_pointer: stack_reset,
     memory: memory.init_memory(),
-    bus: bus.new(),
+    bus: Bus(memory.init_memory()),
   )
 }
 

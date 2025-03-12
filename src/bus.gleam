@@ -11,36 +11,18 @@ pub const ppu_registers = 0x2000
 
 pub const ppu_registers_mirrors_end = 0x3FFF
 
-// Initialize a new Bus with zeroed memory
-pub fn new() -> Bus {
-  Bus(init_memory())
-}
-
-// Initialize memory with 0x0 until 0x0800 (2KB RAM)
-fn init_memory() -> List(Int) {
-  init_memory_with_size(0x0800)
-}
-
-// Helper function to create a list of zeros with specified size
-fn init_memory_with_size(size: Int) -> List(Int) {
-  case size {
-    0 -> []
-    n -> [0, ..init_memory_with_size(n - 1)]
-  }
-}
-
 // Read a byte from the bus
 pub fn mem_read(bus: Bus, addr: Int) -> Result(Int, Nil) {
   case addr {
     addr if addr >= ram_start && addr <= ram_mirrors_end -> {
       // Mirror down RAM address
-      let mirror_down_addr = int.bitwise_and(addr, 0b00000111_11111111)
+      let mirror_down_addr = int.bitwise_and(addr, 0b0000011111111111)
       list_helpers.get_list_value_by_index(bus.cpu_vram, mirror_down_addr)
     }
 
     addr if addr >= ppu_registers && addr <= ppu_registers_mirrors_end -> {
       // Mirror down PPU registers
-      let _mirror_down_addr = int.bitwise_and(addr, 0b00100000_00000111)
+      let _mirror_down_addr = int.bitwise_and(addr, 0b0010000000000111)
       // PPU not implemented yet
       Ok(0)
     }
@@ -57,7 +39,7 @@ pub fn mem_write(bus: Bus, addr: Int, data: Int) -> Result(Bus, Nil) {
   case addr {
     addr if addr >= ram_start && addr <= ram_mirrors_end -> {
       // Mirror down RAM address
-      let mirror_down_addr = int.bitwise_and(addr, 0b00000111_11111111)
+      let mirror_down_addr = int.bitwise_and(addr, 0b0000011111111111)
       case
         list_helpers.set_list_value_by_index(
           bus.cpu_vram,
@@ -72,7 +54,7 @@ pub fn mem_write(bus: Bus, addr: Int, data: Int) -> Result(Bus, Nil) {
 
     addr if addr >= ppu_registers && addr <= ppu_registers_mirrors_end -> {
       // Mirror down PPU registers
-      let _mirror_down_addr = int.bitwise_and(addr, 0b00100000_00000111)
+      let _mirror_down_addr = int.bitwise_and(addr, 0b0010000000000111)
       // PPU not implemented yet
       Ok(bus)
     }

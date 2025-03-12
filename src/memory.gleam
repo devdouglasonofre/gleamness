@@ -10,9 +10,14 @@ pub fn init_memory() -> List(Int) {
 
 // Helper function to create a list of zeros with specified size
 fn init_memory_with_size(size: Int) -> List(Int) {
-  case size {
-    0 -> []
-    n -> [0, ..init_memory_with_size(n - 1)]
+  init_memory_with_size_tail(size, [])
+}
+
+// Tail recursive implementation with accumulator
+fn init_memory_with_size_tail(remaining: Int, acc: List(Int)) -> List(Int) {
+  case remaining {
+    0 -> acc
+    n -> init_memory_with_size_tail(n - 1, [0, ..acc])
   }
 }
 
