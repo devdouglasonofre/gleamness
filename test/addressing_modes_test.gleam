@@ -2,6 +2,7 @@ import cpu
 import gleam/int
 import gleeunit
 import gleeunit/should
+import memory
 import types
 
 pub fn main() {
@@ -27,7 +28,7 @@ pub fn lda_zero_page_test() {
   let value = 0x84
 
   // First set up a value at zero page address $42
-  let cpu_with_memory = case cpu.memory_write(cpu, memory_addr, value) {
+  let cpu_with_memory = case memory.write(cpu, memory_addr, value) {
     Ok(cpu) -> cpu
     Error(_) -> cpu
   }
@@ -50,7 +51,7 @@ pub fn lda_zero_page_x_test() {
 
   // First set up X register with offset and a value at memory location
   let cpu_with_x = types.CPU(..cpu, register_x: offset)
-  let cpu_with_memory = case cpu.memory_write(cpu_with_x, memory_addr, value) {
+  let cpu_with_memory = case memory.write(cpu_with_x, memory_addr, value) {
     Ok(cpu) -> cpu
     Error(_) -> cpu_with_x
   }
