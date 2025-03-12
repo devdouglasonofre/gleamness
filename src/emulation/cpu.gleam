@@ -35,10 +35,20 @@ pub fn get_new_cpu() -> CPU {
 
 // Load a program and run it
 pub fn load_and_run(cpu: CPU, program: List(Int)) -> Result(CPU, Nil) {
+  load_and_run_with_callback(cpu, program, fn(c) { c })
+}
+
+// Load a program and run it with a callback
+pub fn load_and_run_with_callback(
+  cpu: CPU,
+  program: List(Int),
+  callback: fn(CPU) -> CPU,
+) -> Result(CPU, Nil) {
   case load(cpu, program) {
     Ok(new_cpu) -> {
       case reset(new_cpu) {
-        Ok(reset_cpu) -> Ok(run(reset_cpu, reset_cpu.memory))
+        Ok(reset_cpu) ->
+          Ok(run_with_callback(reset_cpu, reset_cpu.memory, callback))
         Error(Nil) -> Error(Nil)
       }
     }
@@ -68,7 +78,8 @@ pub fn reset(cpu: CPU) -> Result(CPU, Nil) {
 
 // Load a program into memory at the ROM address
 pub fn load(cpu: CPU, program: List(Int)) -> Result(CPU, Nil) {
-  load_at_address(cpu, program, 0x8000)
+  // Just for testing purposes
+  load_at_address(cpu, program, 0x0600)
 }
 
 // Load a program into memory at a specified address
@@ -99,11 +110,23 @@ fn load_bytes(cpu: CPU, bytes: List(Int), address: Int) -> Result(CPU, Nil) {
 
 // Run the program
 pub fn run(cpu: CPU, program: List(Int)) -> CPU {
-  interpret_loop(cpu, program)
+  interpret_loop(cpu, program, fn(c) { c })
+}
+
+// Run the program with a callback
+pub fn run_with_callback(
+  cpu: CPU,
+  program: List(Int),
+  callback: fn(CPU) -> CPU,
+) -> CPU {
+  interpret_loop(cpu, program, callback)
 }
 
 // Main interpretation loop
-fn interpret_loop(cpu: CPU, program: List(Int)) -> CPU {
+fn interpret_loop(cpu: CPU, program: List(Int), callback: fn(CPU) -> CPU) -> CPU {
+  // Execute callback before processing the next instruction
+  let cpu = callback(cpu)
+
   case list_helpers.get_list_value_by_index(program, cpu.program_counter) {
     Error(Nil) -> cpu
     Ok(opcode) -> {
@@ -136,7 +159,7 @@ fn interpret_loop(cpu: CPU, program: List(Int)) -> CPU {
         None -> cpu
       }
 
-      interpret_loop(cpu, program)
+      interpret_loop(cpu, program, callback)
     }
   }
 }

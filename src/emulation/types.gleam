@@ -56,6 +56,9 @@ pub type AddressingMode {
   NoneAddressing
 }
 
+pub type CpuCallback =
+  fn(CPU) -> CPU
+
 // CPU status register flags (each bit in the status register)
 // Carry Flag (C)
 pub const flag_carry = 0b00000001
