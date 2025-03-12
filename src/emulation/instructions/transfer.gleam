@@ -1,5 +1,5 @@
-import flags
-import types.{type CPU, flag_negative, flag_zero}
+import emulation/flags
+import emulation/types.{type CPU, flag_negative, flag_zero}
 
 // Transfer Accumulator to X
 pub fn tax(cpu: CPU) -> CPU {

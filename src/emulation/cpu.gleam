@@ -1,17 +1,19 @@
-import addressing
+import emulation/addressing
+import emulation/helpers/instruction_helpers
+import emulation/helpers/list_helpers
+import emulation/instructions/arithmetic
+import emulation/instructions/branch
+import emulation/instructions/flag_ops
+import emulation/instructions/jump
+import emulation/instructions/load_store
+import emulation/instructions/logic
+import emulation/instructions/stack_ops
+import emulation/instructions/transfer
+import emulation/memory
+import emulation/types.{
+  type CPU, type CpuInstruction, Bus, flag_unused, stack_reset,
+}
 import gleam/option.{type Option, None, Some}
-import helpers/instruction_helpers
-import helpers/list_helpers
-import instructions/arithmetic
-import instructions/branch
-import instructions/flag_ops
-import instructions/jump
-import instructions/load_store
-import instructions/logic
-import instructions/stack_ops
-import instructions/transfer
-import memory
-import types.{type CPU, type CpuInstruction, Bus, flag_unused, stack_reset}
 
 // Initialize a new CPU with default state
 pub fn get_new_cpu() -> CPU {

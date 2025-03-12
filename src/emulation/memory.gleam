@@ -1,7 +1,7 @@
-import bus
+import emulation/bus
+import emulation/helpers/list_helpers
+import emulation/types.{type CPU}
 import gleam/int
-import helpers/list_helpers
-import types.{type CPU}
 
 // Initialize memory with 0x0 until 0xFFFF (65535 bytes)
 pub fn init_memory() -> List(Int) {

@@ -1,6 +1,6 @@
-import flags
-import memory
-import types.{type CPU, flag_negative, flag_zero}
+import emulation/flags
+import emulation/memory
+import emulation/types.{type CPU, flag_negative, flag_zero}
 
 // Load Accumulator with a value
 pub fn lda(cpu: CPU, value: Int) -> CPU {

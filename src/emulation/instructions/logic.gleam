@@ -1,10 +1,10 @@
-import flags
-import gleam/int
-import memory
-import types.{
+import emulation/flags
+import emulation/memory
+import emulation/types.{
   type AddressingMode, type CPU, Accumulator, flag_carry, flag_negative,
   flag_overflow, flag_zero,
 }
+import gleam/int
 
 // Logical AND
 pub fn and(cpu: CPU, value: Int) -> CPU {

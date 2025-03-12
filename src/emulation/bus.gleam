@@ -1,6 +1,6 @@
+import emulation/helpers/list_helpers
+import emulation/types.{type Bus, Bus}
 import gleam/int
-import helpers/list_helpers
-import types.{type Bus, Bus}
 
 // Memory map constants
 pub const ram_start = 0x0000

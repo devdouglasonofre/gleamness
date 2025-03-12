@@ -1,7 +1,7 @@
+import emulation/helpers/list_helpers
 import gleam/result
 import gleeunit
 import gleeunit/should
-import helpers/list_helpers
 
 pub fn main() {
   gleeunit.main()

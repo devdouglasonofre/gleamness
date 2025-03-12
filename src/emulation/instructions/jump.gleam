@@ -1,6 +1,6 @@
+import emulation/stack
+import emulation/types.{type CPU, flag_unused}
 import gleam/int
-import stack
-import types.{type CPU, flag_unused}
 
 // Jump
 pub fn jmp(cpu: CPU, addr: Int) -> CPU {

@@ -1,5 +1,7 @@
-import flags
-import types.{type CPU, flag_carry, flag_negative, flag_overflow, flag_zero}
+import emulation/flags
+import emulation/types.{
+  type CPU, flag_carry, flag_negative, flag_overflow, flag_zero,
+}
 
 // Branch if Equal (Zero set)
 pub fn beq(cpu: CPU, addr: Int) -> CPU {

@@ -1,9 +1,9 @@
-import cpu
+import emulation/cpu
+import emulation/memory
+import emulation/types
 import gleam/int
 import gleeunit
 import gleeunit/should
-import memory
-import types
 
 pub fn main() {
   gleeunit.main()

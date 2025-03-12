@@ -1,8 +1,8 @@
-import gleam/int
-import gleam/list
-import types.{
+import emulation/types.{
   type CPU, flag_carry, flag_negative, flag_overflow, flag_unused, flag_zero,
 }
+import gleam/int
+import gleam/list
 
 // Update CPU flags based on the result of an operation
 pub fn update_flags(cpu: CPU, result: Int, flags_to_update: List(Int)) -> CPU {

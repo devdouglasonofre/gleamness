@@ -25,6 +25,21 @@ pub type CpuInstruction {
   )
 }
 
+pub type Mirroring {
+  Vertical
+  Horizontal
+  FourScreen
+}
+
+pub type Rom {
+  Rom(
+    prg_rom: List(Int),
+    chr_rom: List(Int),
+    mapper: Int,
+    screen_mirroring: Mirroring,
+  )
+}
+
 pub type AddressingMode {
   Accumulator
   Immediate

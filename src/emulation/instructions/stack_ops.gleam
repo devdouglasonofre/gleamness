@@ -1,7 +1,7 @@
-import flags
+import emulation/flags
+import emulation/stack
+import emulation/types.{type CPU, flag_negative, flag_unused, flag_zero}
 import gleam/int
-import stack
-import types.{type CPU, flag_negative, flag_unused, flag_zero}
 
 // Push Accumulator to stack
 pub fn pha(cpu: CPU) -> CPU {

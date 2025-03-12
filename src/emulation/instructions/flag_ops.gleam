@@ -1,5 +1,5 @@
-import flags
-import types.{
+import emulation/flags
+import emulation/types.{
   type CPU, flag_carry, flag_decimal_mode, flag_interrupt_disable, flag_overflow,
 }
 

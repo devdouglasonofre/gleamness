@@ -1,4 +1,4 @@
-import cpu
+import emulation/cpu
 import lustre
 import lustre/element
 

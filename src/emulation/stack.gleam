@@ -1,6 +1,6 @@
+import emulation/memory
+import emulation/types.{type CPU, stack_base}
 import gleam/int
-import memory
-import types.{type CPU, stack_base}
 
 // Push a byte onto the stack
 pub fn push(cpu: CPU, value: Int) -> Result(CPU, Nil) {

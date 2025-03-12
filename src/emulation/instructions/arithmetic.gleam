@@ -1,7 +1,7 @@
-import flags
+import emulation/flags
+import emulation/memory
+import emulation/types.{type CPU, flag_carry, flag_negative, flag_zero}
 import gleam/int
-import memory
-import types.{type CPU, flag_carry, flag_negative, flag_zero}
 
 // Add with Carry
 pub fn adc(cpu: CPU, value: Int) -> CPU {

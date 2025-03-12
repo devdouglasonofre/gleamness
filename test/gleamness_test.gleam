@@ -1,4 +1,4 @@
-import cpu
+import emulation/cpu
 import gleeunit
 import gleeunit/should
 

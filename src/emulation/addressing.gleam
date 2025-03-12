@@ -1,11 +1,11 @@
-import gleam/int
-import helpers/list_helpers
-import memory
-import types.{
+import emulation/helpers/list_helpers
+import emulation/memory
+import emulation/types.{
   type AddressingMode, type CPU, Absolute, AbsoluteX, AbsoluteY, Accumulator,
   Immediate, Indirect, IndirectX, IndirectY, NoneAddressing, Relative, ZeroPage,
   ZeroPageX, ZeroPageY,
 }
+import gleam/int
 
 // Helper to fetch a byte from program memory at PC
 fn fetch_byte(cpu: CPU, program: List(Int)) -> #(CPU, Int) {

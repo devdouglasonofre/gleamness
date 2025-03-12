@@ -1,4 +1,4 @@
-import types.{type CpuInstruction, CpuInstruction}
+import emulation/types.{type CpuInstruction, CpuInstruction}
 
 pub fn get_all_instructions() -> List(CpuInstruction) {
   [
