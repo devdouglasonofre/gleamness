@@ -373,6 +373,14 @@ function makeError(variant, module, line, fn, message, extra) {
   return error;
 }
 
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
+
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
   constructor(x0) {
@@ -491,6 +499,48 @@ function map_loop(loop$list, loop$fun, loop$acc) {
 function map(list2, fun) {
   return map_loop(list2, fun, toList([]));
 }
+function drop(loop$list, loop$n) {
+  while (true) {
+    let list2 = loop$list;
+    let n = loop$n;
+    let $ = n <= 0;
+    if ($) {
+      return list2;
+    } else {
+      if (list2.hasLength(0)) {
+        return toList([]);
+      } else {
+        let rest$1 = list2.tail;
+        loop$list = rest$1;
+        loop$n = n - 1;
+      }
+    }
+  }
+}
+function take_loop(loop$list, loop$n, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let n = loop$n;
+    let acc = loop$acc;
+    let $ = n <= 0;
+    if ($) {
+      return reverse(acc);
+    } else {
+      if (list2.hasLength(0)) {
+        return reverse(acc);
+      } else {
+        let first$1 = list2.head;
+        let rest$1 = list2.tail;
+        loop$list = rest$1;
+        loop$n = n - 1;
+        loop$acc = prepend(first$1, acc);
+      }
+    }
+  }
+}
+function take(list2, n) {
+  return take_loop(list2, n, toList([]));
+}
 function append_loop(loop$first, loop$second) {
   while (true) {
     let first2 = loop$first;
@@ -544,6 +594,46 @@ function index_fold_loop(loop$over, loop$acc, loop$with, loop$index) {
 }
 function index_fold(list2, initial, fun) {
   return index_fold_loop(list2, initial, fun, 0);
+}
+function range_loop(loop$start, loop$stop, loop$acc) {
+  while (true) {
+    let start3 = loop$start;
+    let stop = loop$stop;
+    let acc = loop$acc;
+    let $ = compare2(start3, stop);
+    if ($ instanceof Eq) {
+      return prepend(stop, acc);
+    } else if ($ instanceof Gt) {
+      loop$start = start3;
+      loop$stop = stop + 1;
+      loop$acc = prepend(stop, acc);
+    } else {
+      loop$start = start3;
+      loop$stop = stop - 1;
+      loop$acc = prepend(stop, acc);
+    }
+  }
+}
+function range(start3, stop) {
+  return range_loop(start3, stop, toList([]));
+}
+function repeat_loop(loop$item, loop$times, loop$acc) {
+  while (true) {
+    let item = loop$item;
+    let times = loop$times;
+    let acc = loop$acc;
+    let $ = times <= 0;
+    if ($) {
+      return acc;
+    } else {
+      loop$item = item;
+      loop$times = times - 1;
+      loop$acc = prepend(item, acc);
+    }
+  }
+}
+function repeat(a, times) {
+  return repeat_loop(a, times, toList([]));
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
@@ -1508,6 +1598,33 @@ function try_get_field(value, field2, or_else) {
 function bitwise_and(x, y) {
   return Number(BigInt(x) & BigInt(y));
 }
+function bitwise_or(x, y) {
+  return Number(BigInt(x) | BigInt(y));
+}
+function bitwise_exclusive_or(x, y) {
+  return Number(BigInt(x) ^ BigInt(y));
+}
+function bitwise_shift_left(x, y) {
+  return Number(BigInt(x) << BigInt(y));
+}
+function bitwise_shift_right(x, y) {
+  return Number(BigInt(x) >> BigInt(y));
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/int.mjs
+function compare2(a, b) {
+  let $ = a === b;
+  if ($) {
+    return new Eq();
+  } else {
+    let $1 = a < b;
+    if ($1) {
+      return new Lt();
+    } else {
+      return new Gt();
+    }
+  }
+}
 
 // build/dev/javascript/gleam_stdlib/gleam/string.mjs
 function drop_start(loop$string, loop$num_graphemes) {
@@ -2463,27 +2580,55 @@ function on_keyup(msg) {
 }
 
 // build/dev/javascript/gleamness/emulation/helpers/list_helpers.mjs
-function set_list_value_by_index(list2, index3, value) {
-  if (list2.hasLength(0)) {
-    return new Error(void 0);
-  } else if (index3 < 0) {
-    let i = index3;
-    return new Error(void 0);
-  } else if (list2.atLeastLength(1) && index3 === 0) {
-    let rest = list2.tail;
-    return new Ok(prepend(value, rest));
-  } else {
-    let head = list2.head;
-    let tail = list2.tail;
-    let i = index3;
-    let $ = set_list_value_by_index(tail, i - 1, value);
-    if ($.isOk()) {
-      let new_tail = $[0];
-      return new Ok(prepend(head, new_tail));
+function get_list_value_by_index(loop$list, loop$index) {
+  while (true) {
+    let list2 = loop$list;
+    let index3 = loop$index;
+    if (list2.hasLength(0)) {
+      return new Error(void 0);
+    } else if (list2.atLeastLength(1) && index3 === 0) {
+      let first2 = list2.head;
+      return new Ok(first2);
+    } else if (list2.atLeastLength(1) && index3 > 0) {
+      let rest = list2.tail;
+      let i = index3;
+      loop$list = rest;
+      loop$index = i - 1;
     } else {
-      let err = $[0];
-      return new Error(err);
+      return new Error(void 0);
     }
+  }
+}
+function set_list_value_by_index_tail(loop$list, loop$index, loop$value, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let index3 = loop$index;
+    let value = loop$value;
+    let acc = loop$acc;
+    if (list2.hasLength(0)) {
+      return new Error(void 0);
+    } else if (list2.atLeastLength(1) && index3 === 0) {
+      let rest = list2.tail;
+      return new Ok(
+        append(append(reverse(acc), toList([value])), rest)
+      );
+    } else {
+      let head = list2.head;
+      let rest = list2.tail;
+      let i = index3;
+      loop$list = rest;
+      loop$index = i - 1;
+      loop$value = value;
+      loop$acc = prepend(head, acc);
+    }
+  }
+}
+function set_list_value_by_index(list2, index3, value) {
+  let $ = index3 < 0;
+  if ($) {
+    return new Error(void 0);
+  } else {
+    return set_list_value_by_index_tail(list2, index3, value, toList([]));
   }
 }
 
@@ -2507,10 +2652,66 @@ var Bus = class extends CustomType {
     this.cpu_vram = cpu_vram;
   }
 };
+var CpuInstruction = class extends CustomType {
+  constructor(opcode, mnemonic, bytes, cycles, addressing_mode) {
+    super();
+    this.opcode = opcode;
+    this.mnemonic = mnemonic;
+    this.bytes = bytes;
+    this.cycles = cycles;
+    this.addressing_mode = addressing_mode;
+  }
+};
+var Accumulator = class extends CustomType {
+};
+var Immediate = class extends CustomType {
+};
+var ZeroPage = class extends CustomType {
+};
+var ZeroPageX = class extends CustomType {
+};
+var ZeroPageY = class extends CustomType {
+};
+var Absolute = class extends CustomType {
+};
+var AbsoluteX = class extends CustomType {
+};
+var AbsoluteY = class extends CustomType {
+};
+var Indirect = class extends CustomType {
+};
+var IndirectX = class extends CustomType {
+};
+var IndirectY = class extends CustomType {
+};
+var Relative = class extends CustomType {
+};
+var NoneAddressing = class extends CustomType {
+};
+var flag_carry = 1;
+var flag_zero = 2;
+var flag_interrupt_disable = 4;
+var flag_decimal_mode = 8;
 var flag_unused = 32;
+var flag_overflow = 64;
+var flag_negative = 128;
+var stack_base = 256;
 var stack_reset = 255;
 
 // build/dev/javascript/gleamness/emulation/bus.mjs
+function mem_read(bus, addr) {
+  if (addr >= 0 && addr <= 8191) {
+    let addr$1 = addr;
+    let mirror_down_addr = bitwise_and(addr$1, 2047);
+    return get_list_value_by_index(bus.cpu_vram, mirror_down_addr);
+  } else if (addr >= 8192 && addr <= 16383) {
+    let addr$1 = addr;
+    let $ = bitwise_and(addr$1, 8199);
+    return new Ok(0);
+  } else {
+    return new Ok(0);
+  }
+}
 function mem_write(bus, addr, data) {
   if (addr >= 0 && addr <= 8191) {
     let addr$1 = addr;
@@ -2534,6 +2735,32 @@ function mem_write(bus, addr, data) {
     return new Ok(bus);
   }
 }
+function mem_read_u16(bus, addr) {
+  let $ = mem_read(bus, addr);
+  if ($.isOk()) {
+    let lo = $[0];
+    let $1 = mem_read(bus, addr + 1);
+    if ($1.isOk()) {
+      let hi = $1[0];
+      return new Ok(bitwise_or(bitwise_shift_left(hi, 8), lo));
+    } else {
+      return new Error(void 0);
+    }
+  } else {
+    return new Error(void 0);
+  }
+}
+function mem_write_u16(bus, addr, data) {
+  let lo = bitwise_and(data, 255);
+  let hi = bitwise_shift_right(data, 8);
+  let $ = mem_write(bus, addr, lo);
+  if ($.isOk()) {
+    let new_bus = $[0];
+    return mem_write(new_bus, addr + 1, hi);
+  } else {
+    return new Error(void 0);
+  }
+}
 
 // build/dev/javascript/gleamness/emulation/memory.mjs
 function init_memory_with_size_tail(loop$remaining, loop$acc) {
@@ -2554,6 +2781,14 @@ function init_memory_with_size(size) {
 }
 function init_memory() {
   return init_memory_with_size(65535);
+}
+function read(cpu, address) {
+  let $ = address < 8192;
+  if ($) {
+    return mem_read(cpu.bus, address);
+  } else {
+    return get_list_value_by_index(cpu.memory, address);
+  }
 }
 function write(cpu, address, data) {
   let $ = address < 8192;
@@ -2603,6 +2838,1584 @@ function write(cpu, address, data) {
     }
   }
 }
+function read_u16(cpu, address) {
+  let $ = address < 8192;
+  if ($) {
+    return mem_read_u16(cpu.bus, address);
+  } else {
+    let $1 = read(cpu, address);
+    if ($1.isOk()) {
+      let lo = $1[0];
+      let $2 = read(cpu, address + 1);
+      if ($2.isOk()) {
+        let hi = $2[0];
+        return new Ok(bitwise_or(bitwise_shift_left(hi, 8), lo));
+      } else {
+        return new Error(void 0);
+      }
+    } else {
+      return new Error(void 0);
+    }
+  }
+}
+function write_u16(cpu, address, data) {
+  let $ = address < 8192;
+  if ($) {
+    let $1 = mem_write_u16(cpu.bus, address, data);
+    if ($1.isOk()) {
+      let new_bus = $1[0];
+      return new Ok(
+        (() => {
+          let _record = cpu;
+          return new CPU(
+            _record.register_a,
+            _record.register_x,
+            _record.register_y,
+            _record.status,
+            _record.program_counter,
+            _record.stack_pointer,
+            _record.memory,
+            new_bus
+          );
+        })()
+      );
+    } else {
+      return new Error(void 0);
+    }
+  } else {
+    let lo = bitwise_and(data, 255);
+    let hi = bitwise_shift_right(data, 8);
+    let $1 = write(cpu, address, lo);
+    if ($1.isOk()) {
+      let new_cpu = $1[0];
+      return write(new_cpu, address + 1, hi);
+    } else {
+      return new Error(void 0);
+    }
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/addressing.mjs
+function fetch_byte(cpu, program) {
+  let $ = get_list_value_by_index(program, cpu.program_counter);
+  if ($.isOk()) {
+    let byte = $[0];
+    let new_cpu = (() => {
+      let _record = cpu;
+      return new CPU(
+        _record.register_a,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        cpu.program_counter + 1,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    })();
+    return [new_cpu, byte];
+  } else {
+    return [cpu, 0];
+  }
+}
+function fetch_word(cpu, program) {
+  let $ = fetch_byte(cpu, program);
+  {
+    let cpu_after_lo = $[0];
+    let lo = $[1];
+    let $1 = fetch_byte(cpu_after_lo, program);
+    {
+      let cpu_after_hi = $1[0];
+      let hi = $1[1];
+      let word = bitwise_or(bitwise_shift_left(hi, 8), lo);
+      return [cpu_after_hi, word];
+    }
+  }
+}
+function get_operand_address(cpu, program, mode) {
+  if (mode instanceof Immediate) {
+    let addr = cpu.program_counter;
+    let new_cpu = (() => {
+      let _record = cpu;
+      return new CPU(
+        _record.register_a,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        cpu.program_counter + 1,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    })();
+    return [new_cpu, addr];
+  } else if (mode instanceof ZeroPage) {
+    let $ = fetch_byte(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      return [new_cpu, addr];
+    }
+  } else if (mode instanceof ZeroPageX) {
+    let $ = fetch_byte(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      let wrapped_addr = bitwise_and(addr + cpu.register_x, 255);
+      return [new_cpu, wrapped_addr];
+    }
+  } else if (mode instanceof ZeroPageY) {
+    let $ = fetch_byte(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      let wrapped_addr = bitwise_and(addr + cpu.register_y, 255);
+      return [new_cpu, wrapped_addr];
+    }
+  } else if (mode instanceof Absolute) {
+    let $ = fetch_word(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      return [new_cpu, addr];
+    }
+  } else if (mode instanceof AbsoluteX) {
+    let $ = fetch_word(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      return [new_cpu, addr + cpu.register_x];
+    }
+  } else if (mode instanceof AbsoluteY) {
+    let $ = fetch_word(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      return [new_cpu, addr + cpu.register_y];
+    }
+  } else if (mode instanceof Indirect) {
+    let $ = fetch_word(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      let lo_byte_addr = addr;
+      let hi_byte_addr = (() => {
+        let $12 = bitwise_and(addr, 255) === 255;
+        if ($12) {
+          return addr - 255;
+        } else {
+          return addr + 1;
+        }
+      })();
+      let $1 = read(new_cpu, lo_byte_addr);
+      if ($1.isOk()) {
+        let lo = $1[0];
+        let $2 = read(new_cpu, hi_byte_addr);
+        if ($2.isOk()) {
+          let hi = $2[0];
+          let final_addr = bitwise_or(bitwise_shift_left(hi, 8), lo);
+          return [new_cpu, final_addr];
+        } else {
+          return [new_cpu, 0];
+        }
+      } else {
+        return [new_cpu, 0];
+      }
+    }
+  } else if (mode instanceof IndirectX) {
+    let $ = fetch_byte(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      let wrapped_addr = bitwise_and(addr + cpu.register_x, 255);
+      let $1 = read(new_cpu, wrapped_addr);
+      if ($1.isOk()) {
+        let lo = $1[0];
+        let $2 = read(new_cpu, bitwise_and(wrapped_addr + 1, 255));
+        if ($2.isOk()) {
+          let hi = $2[0];
+          let final_addr = bitwise_or(bitwise_shift_left(hi, 8), lo);
+          return [new_cpu, final_addr];
+        } else {
+          return [new_cpu, 0];
+        }
+      } else {
+        return [new_cpu, 0];
+      }
+    }
+  } else if (mode instanceof IndirectY) {
+    let $ = fetch_byte(cpu, program);
+    {
+      let new_cpu = $[0];
+      let addr = $[1];
+      let $1 = read(new_cpu, addr);
+      if ($1.isOk()) {
+        let lo = $1[0];
+        let $2 = read(new_cpu, bitwise_and(addr + 1, 255));
+        if ($2.isOk()) {
+          let hi = $2[0];
+          let base_addr = bitwise_or(bitwise_shift_left(hi, 8), lo);
+          let final_addr = base_addr + cpu.register_y;
+          return [new_cpu, final_addr];
+        } else {
+          return [new_cpu, 0];
+        }
+      } else {
+        return [new_cpu, 0];
+      }
+    }
+  } else if (mode instanceof Relative) {
+    let $ = fetch_byte(cpu, program);
+    {
+      let new_cpu = $[0];
+      let offset = $[1];
+      let signed_offset = (() => {
+        let $1 = offset > 127;
+        if ($1) {
+          return offset - 256;
+        } else {
+          return offset;
+        }
+      })();
+      let target_addr = new_cpu.program_counter + signed_offset;
+      return [new_cpu, target_addr];
+    }
+  } else if (mode instanceof Accumulator) {
+    return [cpu, 0];
+  } else {
+    return [cpu, 0];
+  }
+}
+function get_operand_value(cpu, program, mode, operand_addr) {
+  if (mode instanceof Immediate) {
+    let $ = get_list_value_by_index(program, operand_addr);
+    if ($.isOk()) {
+      let value = $[0];
+      return value;
+    } else {
+      return 0;
+    }
+  } else if (mode instanceof Accumulator) {
+    return cpu.register_a;
+  } else if (mode instanceof NoneAddressing) {
+    return 0;
+  } else {
+    let $ = read(cpu, operand_addr);
+    if ($.isOk()) {
+      let value = $[0];
+      return value;
+    } else {
+      return 0;
+    }
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/helpers/instruction_helpers.mjs
+function get_all_instructions() {
+  return toList([
+    new CpuInstruction(105, "ADC", 2, 2, new Immediate()),
+    new CpuInstruction(101, "ADC", 2, 3, new ZeroPage()),
+    new CpuInstruction(117, "ADC", 2, 4, new ZeroPageX()),
+    new CpuInstruction(109, "ADC", 3, 4, new Absolute()),
+    new CpuInstruction(125, "ADC", 3, 4, new AbsoluteX()),
+    new CpuInstruction(121, "ADC", 3, 4, new AbsoluteY()),
+    new CpuInstruction(97, "ADC", 2, 6, new IndirectX()),
+    new CpuInstruction(113, "ADC", 2, 5, new IndirectY()),
+    new CpuInstruction(41, "AND", 2, 2, new Immediate()),
+    new CpuInstruction(37, "AND", 2, 3, new ZeroPage()),
+    new CpuInstruction(53, "AND", 2, 4, new ZeroPageX()),
+    new CpuInstruction(45, "AND", 3, 4, new Absolute()),
+    new CpuInstruction(61, "AND", 3, 4, new AbsoluteX()),
+    new CpuInstruction(57, "AND", 3, 4, new AbsoluteY()),
+    new CpuInstruction(33, "AND", 2, 6, new IndirectX()),
+    new CpuInstruction(49, "AND", 2, 5, new IndirectY()),
+    new CpuInstruction(10, "ASL", 1, 2, new Accumulator()),
+    new CpuInstruction(6, "ASL", 2, 5, new ZeroPage()),
+    new CpuInstruction(22, "ASL", 2, 6, new ZeroPageX()),
+    new CpuInstruction(14, "ASL", 3, 6, new Absolute()),
+    new CpuInstruction(30, "ASL", 3, 7, new AbsoluteX()),
+    new CpuInstruction(144, "BCC", 2, 2, new Relative()),
+    new CpuInstruction(176, "BCS", 2, 2, new Relative()),
+    new CpuInstruction(240, "BEQ", 2, 2, new Relative()),
+    new CpuInstruction(36, "BIT", 2, 3, new ZeroPage()),
+    new CpuInstruction(44, "BIT", 3, 4, new Absolute()),
+    new CpuInstruction(48, "BMI", 2, 2, new Relative()),
+    new CpuInstruction(208, "BNE", 2, 2, new Relative()),
+    new CpuInstruction(16, "BPL", 2, 2, new Relative()),
+    new CpuInstruction(0, "BRK", 1, 7, new NoneAddressing()),
+    new CpuInstruction(80, "BVC", 2, 2, new Relative()),
+    new CpuInstruction(112, "BVS", 2, 2, new Relative()),
+    new CpuInstruction(24, "CLC", 1, 2, new NoneAddressing()),
+    new CpuInstruction(216, "CLD", 1, 2, new NoneAddressing()),
+    new CpuInstruction(88, "CLI", 1, 2, new NoneAddressing()),
+    new CpuInstruction(184, "CLV", 1, 2, new NoneAddressing()),
+    new CpuInstruction(201, "CMP", 2, 2, new Immediate()),
+    new CpuInstruction(197, "CMP", 2, 3, new ZeroPage()),
+    new CpuInstruction(213, "CMP", 2, 4, new ZeroPageX()),
+    new CpuInstruction(205, "CMP", 3, 4, new Absolute()),
+    new CpuInstruction(221, "CMP", 3, 4, new AbsoluteX()),
+    new CpuInstruction(217, "CMP", 3, 4, new AbsoluteY()),
+    new CpuInstruction(193, "CMP", 2, 6, new IndirectX()),
+    new CpuInstruction(209, "CMP", 2, 5, new IndirectY()),
+    new CpuInstruction(224, "CPX", 2, 2, new Immediate()),
+    new CpuInstruction(228, "CPX", 2, 3, new ZeroPage()),
+    new CpuInstruction(236, "CPX", 3, 4, new Absolute()),
+    new CpuInstruction(192, "CPY", 2, 2, new Immediate()),
+    new CpuInstruction(196, "CPY", 2, 3, new ZeroPage()),
+    new CpuInstruction(204, "CPY", 3, 4, new Absolute()),
+    new CpuInstruction(198, "DEC", 2, 5, new ZeroPage()),
+    new CpuInstruction(214, "DEC", 2, 6, new ZeroPageX()),
+    new CpuInstruction(206, "DEC", 3, 6, new Absolute()),
+    new CpuInstruction(222, "DEC", 3, 7, new AbsoluteX()),
+    new CpuInstruction(202, "DEX", 1, 2, new NoneAddressing()),
+    new CpuInstruction(136, "DEY", 1, 2, new NoneAddressing()),
+    new CpuInstruction(73, "EOR", 2, 2, new Immediate()),
+    new CpuInstruction(69, "EOR", 2, 3, new ZeroPage()),
+    new CpuInstruction(85, "EOR", 2, 4, new ZeroPageX()),
+    new CpuInstruction(77, "EOR", 3, 4, new Absolute()),
+    new CpuInstruction(93, "EOR", 3, 4, new AbsoluteX()),
+    new CpuInstruction(89, "EOR", 3, 4, new AbsoluteY()),
+    new CpuInstruction(65, "EOR", 2, 6, new IndirectX()),
+    new CpuInstruction(81, "EOR", 2, 5, new IndirectY()),
+    new CpuInstruction(230, "INC", 2, 5, new ZeroPage()),
+    new CpuInstruction(246, "INC", 2, 6, new ZeroPageX()),
+    new CpuInstruction(238, "INC", 3, 6, new Absolute()),
+    new CpuInstruction(254, "INC", 3, 7, new AbsoluteX()),
+    new CpuInstruction(232, "INX", 1, 2, new NoneAddressing()),
+    new CpuInstruction(200, "INY", 1, 2, new NoneAddressing()),
+    new CpuInstruction(76, "JMP", 3, 3, new Absolute()),
+    new CpuInstruction(108, "JMP", 3, 5, new Indirect()),
+    new CpuInstruction(32, "JSR", 3, 6, new Absolute()),
+    new CpuInstruction(169, "LDA", 2, 2, new Immediate()),
+    new CpuInstruction(165, "LDA", 2, 3, new ZeroPage()),
+    new CpuInstruction(181, "LDA", 2, 4, new ZeroPageX()),
+    new CpuInstruction(173, "LDA", 3, 4, new Absolute()),
+    new CpuInstruction(189, "LDA", 3, 4, new AbsoluteX()),
+    new CpuInstruction(185, "LDA", 3, 4, new AbsoluteY()),
+    new CpuInstruction(161, "LDA", 2, 6, new IndirectX()),
+    new CpuInstruction(177, "LDA", 2, 5, new IndirectY()),
+    new CpuInstruction(162, "LDX", 2, 2, new Immediate()),
+    new CpuInstruction(166, "LDX", 2, 3, new ZeroPage()),
+    new CpuInstruction(182, "LDX", 2, 4, new ZeroPageY()),
+    new CpuInstruction(174, "LDX", 3, 4, new Absolute()),
+    new CpuInstruction(190, "LDX", 3, 4, new AbsoluteY()),
+    new CpuInstruction(160, "LDY", 2, 2, new Immediate()),
+    new CpuInstruction(164, "LDY", 2, 3, new ZeroPage()),
+    new CpuInstruction(180, "LDY", 2, 4, new ZeroPageX()),
+    new CpuInstruction(172, "LDY", 3, 4, new Absolute()),
+    new CpuInstruction(188, "LDY", 3, 4, new AbsoluteX()),
+    new CpuInstruction(74, "LSR", 1, 2, new Accumulator()),
+    new CpuInstruction(70, "LSR", 2, 5, new ZeroPage()),
+    new CpuInstruction(86, "LSR", 2, 6, new ZeroPageX()),
+    new CpuInstruction(78, "LSR", 3, 6, new Absolute()),
+    new CpuInstruction(94, "LSR", 3, 7, new AbsoluteX()),
+    new CpuInstruction(234, "NOP", 1, 2, new NoneAddressing()),
+    new CpuInstruction(9, "ORA", 2, 2, new Immediate()),
+    new CpuInstruction(5, "ORA", 2, 3, new ZeroPage()),
+    new CpuInstruction(21, "ORA", 2, 4, new ZeroPageX()),
+    new CpuInstruction(13, "ORA", 3, 4, new Absolute()),
+    new CpuInstruction(29, "ORA", 3, 4, new AbsoluteX()),
+    new CpuInstruction(25, "ORA", 3, 4, new AbsoluteY()),
+    new CpuInstruction(1, "ORA", 2, 6, new IndirectX()),
+    new CpuInstruction(17, "ORA", 2, 5, new IndirectY()),
+    new CpuInstruction(72, "PHA", 1, 3, new NoneAddressing()),
+    new CpuInstruction(8, "PHP", 1, 3, new NoneAddressing()),
+    new CpuInstruction(104, "PLA", 1, 4, new NoneAddressing()),
+    new CpuInstruction(40, "PLP", 1, 4, new NoneAddressing()),
+    new CpuInstruction(42, "ROL", 1, 2, new Accumulator()),
+    new CpuInstruction(38, "ROL", 2, 5, new ZeroPage()),
+    new CpuInstruction(54, "ROL", 2, 6, new ZeroPageX()),
+    new CpuInstruction(46, "ROL", 3, 6, new Absolute()),
+    new CpuInstruction(62, "ROL", 3, 7, new AbsoluteX()),
+    new CpuInstruction(106, "ROR", 1, 2, new Accumulator()),
+    new CpuInstruction(102, "ROR", 2, 5, new ZeroPage()),
+    new CpuInstruction(118, "ROR", 2, 6, new ZeroPageX()),
+    new CpuInstruction(110, "ROR", 3, 6, new Absolute()),
+    new CpuInstruction(126, "ROR", 3, 7, new AbsoluteX()),
+    new CpuInstruction(64, "RTI", 1, 6, new NoneAddressing()),
+    new CpuInstruction(96, "RTS", 1, 6, new NoneAddressing()),
+    new CpuInstruction(233, "SBC", 2, 2, new Immediate()),
+    new CpuInstruction(229, "SBC", 2, 3, new ZeroPage()),
+    new CpuInstruction(245, "SBC", 2, 4, new ZeroPageX()),
+    new CpuInstruction(237, "SBC", 3, 4, new Absolute()),
+    new CpuInstruction(253, "SBC", 3, 4, new AbsoluteX()),
+    new CpuInstruction(249, "SBC", 3, 4, new AbsoluteY()),
+    new CpuInstruction(225, "SBC", 2, 6, new IndirectX()),
+    new CpuInstruction(241, "SBC", 2, 5, new IndirectY()),
+    new CpuInstruction(56, "SEC", 1, 2, new NoneAddressing()),
+    new CpuInstruction(248, "SED", 1, 2, new NoneAddressing()),
+    new CpuInstruction(120, "SEI", 1, 2, new NoneAddressing()),
+    new CpuInstruction(133, "STA", 2, 3, new ZeroPage()),
+    new CpuInstruction(149, "STA", 2, 4, new ZeroPageX()),
+    new CpuInstruction(141, "STA", 3, 4, new Absolute()),
+    new CpuInstruction(157, "STA", 3, 5, new AbsoluteX()),
+    new CpuInstruction(153, "STA", 3, 5, new AbsoluteY()),
+    new CpuInstruction(129, "STA", 2, 6, new IndirectX()),
+    new CpuInstruction(145, "STA", 2, 6, new IndirectY()),
+    new CpuInstruction(134, "STX", 2, 3, new ZeroPage()),
+    new CpuInstruction(150, "STX", 2, 4, new ZeroPageY()),
+    new CpuInstruction(142, "STX", 3, 4, new Absolute()),
+    new CpuInstruction(132, "STY", 2, 3, new ZeroPage()),
+    new CpuInstruction(148, "STY", 2, 4, new ZeroPageX()),
+    new CpuInstruction(140, "STY", 3, 4, new Absolute()),
+    new CpuInstruction(170, "TAX", 1, 2, new NoneAddressing()),
+    new CpuInstruction(168, "TAY", 1, 2, new NoneAddressing()),
+    new CpuInstruction(186, "TSX", 1, 2, new NoneAddressing()),
+    new CpuInstruction(138, "TXA", 1, 2, new NoneAddressing()),
+    new CpuInstruction(154, "TXS", 1, 2, new NoneAddressing()),
+    new CpuInstruction(152, "TYA", 1, 2, new NoneAddressing())
+  ]);
+}
+
+// build/dev/javascript/gleamness/emulation/flags.mjs
+function update_flags(cpu, result, flags_to_update) {
+  let status = cpu.status;
+  let status$1 = bitwise_or(status, flag_unused);
+  let status$2 = fold(
+    flags_to_update,
+    status$1,
+    (status2, flag) => {
+      if (flag === 2) {
+        let f = flag;
+        let $ = result === 0;
+        if ($) {
+          return bitwise_or(status2, flag_zero);
+        } else {
+          return bitwise_and(
+            status2,
+            bitwise_exclusive_or(255, flag_zero)
+          );
+        }
+      } else if (flag === 128) {
+        let f = flag;
+        let $ = bitwise_and(result, 128) !== 0;
+        if ($) {
+          return bitwise_or(status2, flag_negative);
+        } else {
+          return bitwise_and(
+            status2,
+            bitwise_exclusive_or(255, flag_negative)
+          );
+        }
+      } else if (flag === 1) {
+        let f = flag;
+        return status2;
+      } else if (flag === 64) {
+        let f = flag;
+        return status2;
+      } else {
+        return status2;
+      }
+    }
+  );
+  let _record = cpu;
+  return new CPU(
+    _record.register_a,
+    _record.register_x,
+    _record.register_y,
+    status$2,
+    _record.program_counter,
+    _record.stack_pointer,
+    _record.memory,
+    _record.bus
+  );
+}
+function is_flag_set(cpu, flag) {
+  return bitwise_and(cpu.status, flag) !== 0;
+}
+function set_flag(cpu, flag) {
+  let status = bitwise_or(cpu.status, flag);
+  let _record = cpu;
+  return new CPU(
+    _record.register_a,
+    _record.register_x,
+    _record.register_y,
+    status,
+    _record.program_counter,
+    _record.stack_pointer,
+    _record.memory,
+    _record.bus
+  );
+}
+function clear_flag(cpu, flag) {
+  let status = bitwise_and(
+    cpu.status,
+    bitwise_exclusive_or(255, flag)
+  );
+  let _record = cpu;
+  return new CPU(
+    _record.register_a,
+    _record.register_x,
+    _record.register_y,
+    status,
+    _record.program_counter,
+    _record.stack_pointer,
+    _record.memory,
+    _record.bus
+  );
+}
+function update_carry_flag(cpu, carry_set) {
+  if (carry_set) {
+    return set_flag(cpu, flag_carry);
+  } else {
+    return clear_flag(cpu, flag_carry);
+  }
+}
+function update_overflow_and_carry_flags(cpu, overflow_set, carry_set) {
+  let cpu$1 = (() => {
+    if (overflow_set) {
+      return set_flag(cpu, flag_overflow);
+    } else {
+      return clear_flag(cpu, flag_overflow);
+    }
+  })();
+  return update_carry_flag(cpu$1, carry_set);
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/arithmetic.mjs
+function adc(cpu, value) {
+  let carry = (() => {
+    let $ = is_flag_set(cpu, flag_carry);
+    if ($) {
+      return 1;
+    } else {
+      return 0;
+    }
+  })();
+  let sum = cpu.register_a + value + carry;
+  let result = bitwise_and(sum, 255);
+  let carry_set = sum > 255;
+  let a_sign = bitwise_and(cpu.register_a, 128);
+  let m_sign = bitwise_and(value, 128);
+  let r_sign = bitwise_and(result, 128);
+  let overflow_set = a_sign === m_sign && a_sign !== r_sign;
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      result,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  let cpu$2 = update_overflow_and_carry_flags(
+    cpu$1,
+    overflow_set,
+    carry_set
+  );
+  return update_flags(cpu$2, result, toList([flag_zero, flag_negative]));
+}
+function sbc(cpu, value) {
+  let inverted_value = bitwise_exclusive_or(value, 255);
+  return adc(cpu, inverted_value);
+}
+function inc(cpu, addr) {
+  let $ = read(cpu, addr);
+  if ($.isOk()) {
+    let value = $[0];
+    let new_value = bitwise_and(value + 1, 255);
+    let $1 = write(cpu, addr, new_value);
+    if ($1.isOk()) {
+      let new_cpu = $1[0];
+      return update_flags(
+        new_cpu,
+        new_value,
+        toList([flag_zero, flag_negative])
+      );
+    } else {
+      return cpu;
+    }
+  } else {
+    return cpu;
+  }
+}
+function dec(cpu, addr) {
+  let $ = read(cpu, addr);
+  if ($.isOk()) {
+    let value = $[0];
+    let new_value = bitwise_and(value - 1, 255);
+    let $1 = write(cpu, addr, new_value);
+    if ($1.isOk()) {
+      let new_cpu = $1[0];
+      return update_flags(
+        new_cpu,
+        new_value,
+        toList([flag_zero, flag_negative])
+      );
+    } else {
+      return cpu;
+    }
+  } else {
+    return cpu;
+  }
+}
+function inx(cpu) {
+  let value = bitwise_and(cpu.register_x + 1, 255);
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      value,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+}
+function iny(cpu) {
+  let value = bitwise_and(cpu.register_y + 1, 255);
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      value,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+}
+function dex(cpu) {
+  let value = bitwise_and(cpu.register_x - 1, 255);
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      value,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+}
+function dey(cpu) {
+  let value = bitwise_and(cpu.register_y - 1, 255);
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      value,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/branch.mjs
+function beq(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_zero);
+  if ($) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+function bne(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_zero);
+  if (!$) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+function bcs(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_carry);
+  if ($) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+function bcc(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_carry);
+  if (!$) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+function bmi(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_negative);
+  if ($) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+function bpl(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_negative);
+  if (!$) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+function bvs(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_overflow);
+  if ($) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+function bvc(cpu, addr) {
+  let $ = is_flag_set(cpu, flag_overflow);
+  if (!$) {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      addr,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/flag_ops.mjs
+function clc(cpu) {
+  return clear_flag(cpu, flag_carry);
+}
+function sec(cpu) {
+  return set_flag(cpu, flag_carry);
+}
+function cld(cpu) {
+  return clear_flag(cpu, flag_decimal_mode);
+}
+function sed(cpu) {
+  return set_flag(cpu, flag_decimal_mode);
+}
+function cli(cpu) {
+  return clear_flag(cpu, flag_interrupt_disable);
+}
+function sei(cpu) {
+  return set_flag(cpu, flag_interrupt_disable);
+}
+function clv(cpu) {
+  return clear_flag(cpu, flag_overflow);
+}
+function nop(cpu) {
+  return cpu;
+}
+
+// build/dev/javascript/gleamness/emulation/stack.mjs
+function push(cpu, value) {
+  let addr = stack_base + cpu.stack_pointer;
+  let $ = write(cpu, addr, value);
+  if ($.isOk()) {
+    let new_cpu = $[0];
+    let new_sp = bitwise_and(cpu.stack_pointer - 1, 255);
+    return new Ok(
+      (() => {
+        let _record = new_cpu;
+        return new CPU(
+          _record.register_a,
+          _record.register_x,
+          _record.register_y,
+          _record.status,
+          _record.program_counter,
+          new_sp,
+          _record.memory,
+          _record.bus
+        );
+      })()
+    );
+  } else {
+    return new Error(void 0);
+  }
+}
+function pull(cpu) {
+  let new_sp = bitwise_and(cpu.stack_pointer + 1, 255);
+  let addr = stack_base + new_sp;
+  let $ = read(cpu, addr);
+  if ($.isOk()) {
+    let value = $[0];
+    return new Ok(
+      [
+        (() => {
+          let _record = cpu;
+          return new CPU(
+            _record.register_a,
+            _record.register_x,
+            _record.register_y,
+            _record.status,
+            _record.program_counter,
+            new_sp,
+            _record.memory,
+            _record.bus
+          );
+        })(),
+        value
+      ]
+    );
+  } else {
+    return new Error(void 0);
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/jump.mjs
+function jmp(cpu, addr) {
+  let _record = cpu;
+  return new CPU(
+    _record.register_a,
+    _record.register_x,
+    _record.register_y,
+    _record.status,
+    addr,
+    _record.stack_pointer,
+    _record.memory,
+    _record.bus
+  );
+}
+function jsr(cpu, addr) {
+  let return_addr = cpu.program_counter - 1;
+  let hi = bitwise_shift_right(return_addr, 8);
+  let $ = push(cpu, hi);
+  if ($.isOk()) {
+    let cpu1 = $[0];
+    let lo = bitwise_and(return_addr, 255);
+    let $1 = push(cpu1, lo);
+    if ($1.isOk()) {
+      let cpu2 = $1[0];
+      let _record = cpu2;
+      return new CPU(
+        _record.register_a,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        addr,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    } else {
+      return cpu;
+    }
+  } else {
+    return cpu;
+  }
+}
+function rts(cpu) {
+  let $ = pull(cpu);
+  if ($.isOk()) {
+    let cpu1 = $[0][0];
+    let lo = $[0][1];
+    let $1 = pull(cpu1);
+    if ($1.isOk()) {
+      let cpu2 = $1[0][0];
+      let hi = $1[0][1];
+      let addr = bitwise_or(bitwise_shift_left(hi, 8), lo) + 1;
+      let _record = cpu2;
+      return new CPU(
+        _record.register_a,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        addr,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    } else {
+      return cpu1;
+    }
+  } else {
+    return cpu;
+  }
+}
+function rti(cpu) {
+  let $ = pull(cpu);
+  if ($.isOk()) {
+    let cpu1 = $[0][0];
+    let status = $[0][1];
+    let status_with_unused = bitwise_or(status, flag_unused);
+    let cpu1$1 = (() => {
+      let _record = cpu1;
+      return new CPU(
+        _record.register_a,
+        _record.register_x,
+        _record.register_y,
+        status_with_unused,
+        _record.program_counter,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    })();
+    let $1 = pull(cpu1$1);
+    if ($1.isOk()) {
+      let cpu2 = $1[0][0];
+      let lo = $1[0][1];
+      let $2 = pull(cpu2);
+      if ($2.isOk()) {
+        let cpu3 = $2[0][0];
+        let hi = $2[0][1];
+        let addr = bitwise_or(bitwise_shift_left(hi, 8), lo);
+        let _record = cpu3;
+        return new CPU(
+          _record.register_a,
+          _record.register_x,
+          _record.register_y,
+          _record.status,
+          addr,
+          _record.stack_pointer,
+          _record.memory,
+          _record.bus
+        );
+      } else {
+        return cpu2;
+      }
+    } else {
+      return cpu1$1;
+    }
+  } else {
+    return cpu;
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/load_store.mjs
+function lda(cpu, value) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      value,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+}
+function ldx(cpu, value) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      value,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+}
+function ldy(cpu, value) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      value,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+}
+function sta(cpu, addr) {
+  let $ = write(cpu, addr, cpu.register_a);
+  if ($.isOk()) {
+    let new_cpu = $[0];
+    return new_cpu;
+  } else {
+    return cpu;
+  }
+}
+function stx(cpu, addr) {
+  let $ = write(cpu, addr, cpu.register_x);
+  if ($.isOk()) {
+    let new_cpu = $[0];
+    return new_cpu;
+  } else {
+    return cpu;
+  }
+}
+function sty(cpu, addr) {
+  let $ = write(cpu, addr, cpu.register_y);
+  if ($.isOk()) {
+    let new_cpu = $[0];
+    return new_cpu;
+  } else {
+    return cpu;
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/logic.mjs
+function and(cpu, value) {
+  let result = bitwise_and(cpu.register_a, value);
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      result,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, result, toList([flag_zero, flag_negative]));
+}
+function eor(cpu, value) {
+  let result = bitwise_exclusive_or(cpu.register_a, value);
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      result,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, result, toList([flag_zero, flag_negative]));
+}
+function ora(cpu, value) {
+  let result = bitwise_or(cpu.register_a, value);
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      result,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(cpu$1, result, toList([flag_zero, flag_negative]));
+}
+function bit(cpu, value) {
+  let result = bitwise_and(cpu.register_a, value);
+  let zero_flag = result === 0;
+  let negative_flag = bitwise_and(value, flag_negative);
+  let overflow_flag = bitwise_and(value, flag_overflow);
+  let cpu$1 = clear_flag(cpu, flag_zero);
+  let cpu$2 = (() => {
+    if (zero_flag) {
+      return set_flag(cpu$1, flag_zero);
+    } else {
+      return cpu$1;
+    }
+  })();
+  let cpu$3 = clear_flag(cpu$2, flag_negative);
+  let cpu$4 = (() => {
+    let $2 = negative_flag !== 0;
+    if ($2) {
+      return set_flag(cpu$3, flag_negative);
+    } else {
+      return cpu$3;
+    }
+  })();
+  let cpu$5 = clear_flag(cpu$4, flag_overflow);
+  let $ = overflow_flag !== 0;
+  if ($) {
+    return set_flag(cpu$5, flag_overflow);
+  } else {
+    return cpu$5;
+  }
+}
+function asl(cpu, addr, value, mode) {
+  let carry = (() => {
+    let $ = bitwise_and(value, 128) !== 0;
+    if ($) {
+      return flag_carry;
+    } else {
+      return 0;
+    }
+  })();
+  let result = bitwise_and(bitwise_shift_left(value, 1), 255);
+  let cpu$1 = clear_flag(cpu, flag_carry);
+  let cpu$2 = (() => {
+    let $ = carry !== 0;
+    if ($) {
+      return set_flag(cpu$1, flag_carry);
+    } else {
+      return cpu$1;
+    }
+  })();
+  let cpu$3 = (() => {
+    if (mode instanceof Accumulator) {
+      let _record = cpu$2;
+      return new CPU(
+        result,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        _record.program_counter,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    } else {
+      let $ = write(cpu$2, addr, result);
+      if ($.isOk()) {
+        let new_cpu = $[0];
+        return new_cpu;
+      } else {
+        return cpu$2;
+      }
+    }
+  })();
+  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+}
+function lsr(cpu, addr, value, mode) {
+  let carry = (() => {
+    let $ = bitwise_and(value, 1) !== 0;
+    if ($) {
+      return flag_carry;
+    } else {
+      return 0;
+    }
+  })();
+  let result = bitwise_shift_right(value, 1);
+  let cpu$1 = clear_flag(cpu, flag_carry);
+  let cpu$2 = (() => {
+    let $ = carry !== 0;
+    if ($) {
+      return set_flag(cpu$1, flag_carry);
+    } else {
+      return cpu$1;
+    }
+  })();
+  let cpu$3 = (() => {
+    if (mode instanceof Accumulator) {
+      let _record = cpu$2;
+      return new CPU(
+        result,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        _record.program_counter,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    } else {
+      let $ = write(cpu$2, addr, result);
+      if ($.isOk()) {
+        let new_cpu = $[0];
+        return new_cpu;
+      } else {
+        return cpu$2;
+      }
+    }
+  })();
+  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+}
+function rol(cpu, addr, value, mode) {
+  let current_carry = (() => {
+    let $ = is_flag_set(cpu, flag_carry);
+    if ($) {
+      return 1;
+    } else {
+      return 0;
+    }
+  })();
+  let new_carry = (() => {
+    let $ = bitwise_and(value, 128) !== 0;
+    if ($) {
+      return flag_carry;
+    } else {
+      return 0;
+    }
+  })();
+  let result = bitwise_or(
+    bitwise_and(bitwise_shift_left(value, 1), 255),
+    current_carry
+  );
+  let cpu$1 = clear_flag(cpu, flag_carry);
+  let cpu$2 = (() => {
+    let $ = new_carry !== 0;
+    if ($) {
+      return set_flag(cpu$1, flag_carry);
+    } else {
+      return cpu$1;
+    }
+  })();
+  let cpu$3 = (() => {
+    if (mode instanceof Accumulator) {
+      let _record = cpu$2;
+      return new CPU(
+        result,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        _record.program_counter,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    } else {
+      let $ = write(cpu$2, addr, result);
+      if ($.isOk()) {
+        let new_cpu = $[0];
+        return new_cpu;
+      } else {
+        return cpu$2;
+      }
+    }
+  })();
+  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+}
+function ror(cpu, addr, value, mode) {
+  let current_carry = (() => {
+    let $ = is_flag_set(cpu, flag_carry);
+    if ($) {
+      return 128;
+    } else {
+      return 0;
+    }
+  })();
+  let new_carry = (() => {
+    let $ = bitwise_and(value, 1) !== 0;
+    if ($) {
+      return flag_carry;
+    } else {
+      return 0;
+    }
+  })();
+  let result = bitwise_or(
+    bitwise_shift_right(value, 1),
+    current_carry
+  );
+  let cpu$1 = clear_flag(cpu, flag_carry);
+  let cpu$2 = (() => {
+    let $ = new_carry !== 0;
+    if ($) {
+      return set_flag(cpu$1, flag_carry);
+    } else {
+      return cpu$1;
+    }
+  })();
+  let cpu$3 = (() => {
+    if (mode instanceof Accumulator) {
+      let _record = cpu$2;
+      return new CPU(
+        result,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        _record.program_counter,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    } else {
+      let $ = write(cpu$2, addr, result);
+      if ($.isOk()) {
+        let new_cpu = $[0];
+        return new_cpu;
+      } else {
+        return cpu$2;
+      }
+    }
+  })();
+  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/stack_ops.mjs
+function pha(cpu) {
+  let $ = push(cpu, cpu.register_a);
+  if ($.isOk()) {
+    let new_cpu = $[0];
+    return new_cpu;
+  } else {
+    return cpu;
+  }
+}
+function pla(cpu) {
+  let $ = pull(cpu);
+  if ($.isOk()) {
+    let cpu1 = $[0][0];
+    let value = $[0][1];
+    let cpu2 = (() => {
+      let _record = cpu1;
+      return new CPU(
+        value,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        _record.program_counter,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    })();
+    return update_flags(cpu2, value, toList([flag_zero, flag_negative]));
+  } else {
+    return cpu;
+  }
+}
+function php(cpu) {
+  let break_flag = 48;
+  let status_with_break = bitwise_or(cpu.status, break_flag);
+  let $ = push(cpu, status_with_break);
+  if ($.isOk()) {
+    let new_cpu = $[0];
+    return new_cpu;
+  } else {
+    return cpu;
+  }
+}
+function plp(cpu) {
+  let $ = pull(cpu);
+  if ($.isOk()) {
+    let cpu1 = $[0][0];
+    let status = $[0][1];
+    let status_with_unused = bitwise_or(status, flag_unused);
+    let break_mask = 16;
+    let status_with_break = bitwise_and(
+      cpu.status,
+      bitwise_exclusive_or(255, break_mask)
+    );
+    let status_with_unused_and_break = bitwise_or(
+      status_with_unused,
+      status_with_break
+    );
+    let _record = cpu1;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      _record.register_y,
+      status_with_unused_and_break,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  } else {
+    return cpu;
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/transfer.mjs
+function tax(cpu) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      cpu.register_a,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(
+    cpu$1,
+    cpu$1.register_x,
+    toList([flag_zero, flag_negative])
+  );
+}
+function tay(cpu) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      _record.register_x,
+      cpu.register_a,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(
+    cpu$1,
+    cpu$1.register_y,
+    toList([flag_zero, flag_negative])
+  );
+}
+function txa(cpu) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      cpu.register_x,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(
+    cpu$1,
+    cpu$1.register_a,
+    toList([flag_zero, flag_negative])
+  );
+}
+function tya(cpu) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      cpu.register_y,
+      _record.register_x,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(
+    cpu$1,
+    cpu$1.register_a,
+    toList([flag_zero, flag_negative])
+  );
+}
+function tsx(cpu) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      _record.register_a,
+      cpu.stack_pointer,
+      _record.register_y,
+      _record.status,
+      _record.program_counter,
+      _record.stack_pointer,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  return update_flags(
+    cpu$1,
+    cpu$1.register_x,
+    toList([flag_zero, flag_negative])
+  );
+}
+function txs(cpu) {
+  let _record = cpu;
+  return new CPU(
+    _record.register_a,
+    _record.register_x,
+    _record.register_y,
+    _record.status,
+    _record.program_counter,
+    cpu.register_x,
+    _record.memory,
+    _record.bus
+  );
+}
 
 // build/dev/javascript/gleamness/emulation/cpu.mjs
 function get_new_cpu() {
@@ -2616,6 +4429,42 @@ function get_new_cpu() {
     init_memory(),
     new Bus(init_memory())
   );
+}
+function reset(cpu) {
+  let cpu$1 = (() => {
+    let _record = cpu;
+    return new CPU(
+      0,
+      0,
+      0,
+      flag_unused,
+      _record.program_counter,
+      stack_reset,
+      _record.memory,
+      _record.bus
+    );
+  })();
+  let $ = read_u16(cpu$1, 65532);
+  if ($.isOk()) {
+    let pc_address = $[0];
+    return new Ok(
+      (() => {
+        let _record = cpu$1;
+        return new CPU(
+          _record.register_a,
+          _record.register_x,
+          _record.register_y,
+          _record.status,
+          pc_address,
+          _record.stack_pointer,
+          _record.memory,
+          _record.bus
+        );
+      })()
+    );
+  } else {
+    return new Error(void 0);
+  }
 }
 function load_bytes(loop$cpu, loop$bytes, loop$address) {
   while (true) {
@@ -2640,30 +4489,372 @@ function load_bytes(loop$cpu, loop$bytes, loop$address) {
   }
 }
 function load_at_address(cpu, program, start_address) {
-  let $ = load_bytes(cpu, program, start_address);
+  return load_bytes(cpu, program, start_address);
+}
+function load(cpu, program) {
+  let $ = load_at_address(cpu, program, 1536);
   if ($.isOk()) {
-    let new_cpu = $[0];
-    return new Ok(
-      (() => {
-        let _record = new_cpu;
+    let cpu_with_program = $[0];
+    return write_u16(cpu_with_program, 65532, 1536);
+  } else {
+    return new Error(void 0);
+  }
+}
+function find_matching_instruction(loop$instructions, loop$opcode) {
+  while (true) {
+    let instructions = loop$instructions;
+    let opcode = loop$opcode;
+    if (instructions.hasLength(0)) {
+      return new None();
+    } else {
+      let instr = instructions.head;
+      let rest = instructions.tail;
+      let $ = instr.opcode === opcode;
+      if ($) {
+        return new Some(instr);
+      } else {
+        loop$instructions = rest;
+        loop$opcode = opcode;
+      }
+    }
+  }
+}
+function find_instruction(opcode) {
+  let instructions = get_all_instructions();
+  return find_matching_instruction(instructions, opcode);
+}
+function execute_instruction(cpu, instruction, operand_addr, operand_value) {
+  let $ = instruction.mnemonic;
+  if ($ === "LDA") {
+    return lda(cpu, operand_value);
+  } else if ($ === "LDX") {
+    return ldx(cpu, operand_value);
+  } else if ($ === "LDY") {
+    return ldy(cpu, operand_value);
+  } else if ($ === "STA") {
+    return sta(cpu, operand_addr);
+  } else if ($ === "STX") {
+    return stx(cpu, operand_addr);
+  } else if ($ === "STY") {
+    return sty(cpu, operand_addr);
+  } else if ($ === "TAX") {
+    return tax(cpu);
+  } else if ($ === "TAY") {
+    return tay(cpu);
+  } else if ($ === "TXA") {
+    return txa(cpu);
+  } else if ($ === "TYA") {
+    return tya(cpu);
+  } else if ($ === "TSX") {
+    return tsx(cpu);
+  } else if ($ === "TXS") {
+    return txs(cpu);
+  } else if ($ === "PHA") {
+    return pha(cpu);
+  } else if ($ === "PLA") {
+    return pla(cpu);
+  } else if ($ === "PHP") {
+    return php(cpu);
+  } else if ($ === "PLP") {
+    return plp(cpu);
+  } else if ($ === "ADC") {
+    return adc(cpu, operand_value);
+  } else if ($ === "SBC") {
+    return sbc(cpu, operand_value);
+  } else if ($ === "INC") {
+    return inc(cpu, operand_addr);
+  } else if ($ === "INX") {
+    return inx(cpu);
+  } else if ($ === "INY") {
+    return iny(cpu);
+  } else if ($ === "DEC") {
+    return dec(cpu, operand_addr);
+  } else if ($ === "DEX") {
+    return dex(cpu);
+  } else if ($ === "DEY") {
+    return dey(cpu);
+  } else if ($ === "AND") {
+    return and(cpu, operand_value);
+  } else if ($ === "EOR") {
+    return eor(cpu, operand_value);
+  } else if ($ === "ORA") {
+    return ora(cpu, operand_value);
+  } else if ($ === "BIT") {
+    return bit(cpu, operand_value);
+  } else if ($ === "ASL") {
+    return asl(
+      cpu,
+      operand_addr,
+      operand_value,
+      instruction.addressing_mode
+    );
+  } else if ($ === "LSR") {
+    return lsr(
+      cpu,
+      operand_addr,
+      operand_value,
+      instruction.addressing_mode
+    );
+  } else if ($ === "ROL") {
+    return rol(
+      cpu,
+      operand_addr,
+      operand_value,
+      instruction.addressing_mode
+    );
+  } else if ($ === "ROR") {
+    return ror(
+      cpu,
+      operand_addr,
+      operand_value,
+      instruction.addressing_mode
+    );
+  } else if ($ === "JMP") {
+    return jmp(cpu, operand_addr);
+  } else if ($ === "JSR") {
+    return jsr(cpu, operand_addr);
+  } else if ($ === "RTS") {
+    return rts(cpu);
+  } else if ($ === "RTI") {
+    return rti(cpu);
+  } else if ($ === "BEQ") {
+    return beq(cpu, operand_addr);
+  } else if ($ === "BNE") {
+    return bne(cpu, operand_addr);
+  } else if ($ === "BCS") {
+    return bcs(cpu, operand_addr);
+  } else if ($ === "BCC") {
+    return bcc(cpu, operand_addr);
+  } else if ($ === "BMI") {
+    return bmi(cpu, operand_addr);
+  } else if ($ === "BPL") {
+    return bpl(cpu, operand_addr);
+  } else if ($ === "BVS") {
+    return bvs(cpu, operand_addr);
+  } else if ($ === "BVC") {
+    return bvc(cpu, operand_addr);
+  } else if ($ === "CLC") {
+    return clc(cpu);
+  } else if ($ === "SEC") {
+    return sec(cpu);
+  } else if ($ === "CLD") {
+    return cld(cpu);
+  } else if ($ === "SED") {
+    return sed(cpu);
+  } else if ($ === "CLI") {
+    return cli(cpu);
+  } else if ($ === "SEI") {
+    return sei(cpu);
+  } else if ($ === "CLV") {
+    return clv(cpu);
+  } else if ($ === "NOP") {
+    return nop(cpu);
+  } else if ($ === "BRK") {
+    return cpu;
+  } else {
+    return cpu;
+  }
+}
+function interpret_loop(loop$cpu, loop$program, loop$callback) {
+  while (true) {
+    let cpu = loop$cpu;
+    let program = loop$program;
+    let callback = loop$callback;
+    let cpu$1 = callback(cpu);
+    let $ = get_list_value_by_index(
+      program,
+      cpu$1.program_counter
+    );
+    if (!$.isOk() && !$[0]) {
+      return cpu$1;
+    } else {
+      let opcode = $[0];
+      let instruction = find_instruction(opcode);
+      let cpu$2 = (() => {
+        let _record = cpu$1;
         return new CPU(
           _record.register_a,
           _record.register_x,
           _record.register_y,
           _record.status,
-          start_address,
+          cpu$1.program_counter + 1,
           _record.stack_pointer,
           _record.memory,
           _record.bus
         );
-      })()
-    );
+      })();
+      let cpu$3 = (() => {
+        if (instruction instanceof Some && instruction[0].opcode === 0) {
+          let instr = instruction[0];
+          return cpu$2;
+        } else if (instruction instanceof Some) {
+          let instr = instruction[0];
+          let $1 = get_operand_address(
+            cpu$2,
+            program,
+            instr.addressing_mode
+          );
+          let cpu$32 = $1[0];
+          let operand_addr = $1[1];
+          let operand_value = get_operand_value(
+            cpu$32,
+            program,
+            instr.addressing_mode,
+            operand_addr
+          );
+          return execute_instruction(cpu$32, instr, operand_addr, operand_value);
+        } else {
+          return cpu$2;
+        }
+      })();
+      loop$cpu = cpu$3;
+      loop$program = program;
+      loop$callback = callback;
+    }
+  }
+}
+function run_with_callback(cpu, program, callback) {
+  return interpret_loop(cpu, program, callback);
+}
+function load_and_run_with_callback(cpu, program, callback) {
+  let $ = load(cpu, program);
+  if ($.isOk()) {
+    let new_cpu = $[0];
+    let $1 = reset(new_cpu);
+    if ($1.isOk()) {
+      let reset_cpu = $1[0];
+      return new Ok(run_with_callback(reset_cpu, reset_cpu.memory, callback));
+    } else {
+      return new Error(void 0);
+    }
   } else {
     return new Error(void 0);
   }
 }
-function load(cpu, program) {
-  return load_at_address(cpu, program, 1536);
+function load_and_run(cpu, program) {
+  return load_and_run_with_callback(cpu, program, (c) => {
+    return c;
+  });
+}
+
+// build/dev/javascript/gleamness/emulation/screen.mjs
+var Color = class extends CustomType {
+  constructor(r, g, b) {
+    super();
+    this.r = r;
+    this.g = g;
+    this.b = b;
+  }
+};
+var ScreenState = class extends CustomType {
+  constructor(frame, changed) {
+    super();
+    this.frame = frame;
+    this.changed = changed;
+  }
+};
+function new_screen_state() {
+  return new ScreenState(repeat(0, 32 * 32 * 3), false);
+}
+function get_color(byte) {
+  if (byte === 0) {
+    return new Color(0, 0, 0);
+  } else if (byte === 1) {
+    return new Color(255, 255, 255);
+  } else if (byte === 2) {
+    return new Color(128, 128, 128);
+  } else if (byte === 9) {
+    return new Color(128, 128, 128);
+  } else if (byte === 3) {
+    return new Color(255, 0, 0);
+  } else if (byte === 10) {
+    return new Color(255, 0, 0);
+  } else if (byte === 4) {
+    return new Color(0, 255, 0);
+  } else if (byte === 11) {
+    return new Color(0, 255, 0);
+  } else if (byte === 5) {
+    return new Color(0, 0, 255);
+  } else if (byte === 12) {
+    return new Color(0, 0, 255);
+  } else if (byte === 6) {
+    return new Color(255, 0, 255);
+  } else if (byte === 13) {
+    return new Color(255, 0, 255);
+  } else if (byte === 7) {
+    return new Color(255, 255, 0);
+  } else if (byte === 14) {
+    return new Color(255, 255, 0);
+  } else {
+    return new Color(0, 255, 255);
+  }
+}
+function update_frame_slice(frame, idx, value) {
+  let before = take(frame, idx);
+  let after = drop(frame, idx + 1);
+  return append(before, prepend(value, after));
+}
+function update_frame_with_color(frame, frame_idx, color) {
+  let _pipe = frame;
+  let _pipe$1 = ((f) => {
+    return update_frame_slice(f, frame_idx, color.r);
+  })(
+    _pipe
+  );
+  let _pipe$2 = ((f) => {
+    return update_frame_slice(f, frame_idx + 1, color.g);
+  })(
+    _pipe$1
+  );
+  return ((f) => {
+    return update_frame_slice(f, frame_idx + 2, color.b);
+  })(
+    _pipe$2
+  );
+}
+function get_current_colors(frame, idx) {
+  let $ = drop(frame, idx);
+  if ($.atLeastLength(3)) {
+    let r = $.head;
+    let g = $.tail.head;
+    let b = $.tail.tail.head;
+    return toList([r, g, b]);
+  } else {
+    return toList([]);
+  }
+}
+function read_screen_state(cpu, state) {
+  let new_frame = (() => {
+    let _pipe = range(512, 1536);
+    return fold(
+      _pipe,
+      [state.frame, false],
+      (acc, addr) => {
+        let frame2 = acc[0];
+        let $ = read(cpu, addr);
+        if ($.isOk()) {
+          let color_idx = $[0];
+          let color = get_color(color_idx);
+          let frame_idx = (addr - 512) * 3;
+          let current_colors = get_current_colors(frame2, frame_idx);
+          if (current_colors.hasLength(3) && (current_colors.head === color.r && current_colors.tail.head === color.g && current_colors.tail.tail.head === color.b)) {
+            let old_r = current_colors.head;
+            let old_g = current_colors.tail.head;
+            let old_b = current_colors.tail.tail.head;
+            return acc;
+          } else {
+            let new_frame2 = update_frame_with_color(frame2, frame_idx, color);
+            return [new_frame2, true];
+          }
+        } else {
+          return acc;
+        }
+      }
+    );
+  })();
+  let frame = new_frame[0];
+  let changed = new_frame[1];
+  return new ScreenState(frame, changed);
 }
 
 // build/dev/javascript/gleamness/ffi.mjs
@@ -2696,16 +4887,26 @@ function drawTexture(ctx, texture, x, y) {
     return;
   ctx.drawImage(texture.canvas, x, y);
 }
-function clearTexture(texture, r, g, b) {
+function updateTextureWithFrame(texture, frameData, width2, height2) {
+  frameData = [...frameData];
+  console.log(frameData.filter((v) => v !== 0));
   if (!texture || !texture.ctx)
     return;
-  texture.ctx.fillStyle = `rgb(${r},${g},${b})`;
-  texture.ctx.fillRect(0, 0, texture.canvas.width, texture.canvas.height);
+  for (let y = 0; y < height2; y++) {
+    for (let x = 0; x < width2; x++) {
+      const frameIdx = (y * width2 + x) * 3;
+      const r = frameData[frameIdx];
+      const g = frameData[frameIdx + 1];
+      const b = frameData[frameIdx + 2];
+      texture.ctx.fillStyle = `rgb(${r},${g},${b})`;
+      texture.ctx.fillRect(x, y, 1, 1);
+    }
+  }
 }
 
 // build/dev/javascript/gleamness/gleamness.mjs
 var Model2 = class extends CustomType {
-  constructor(cpu, window_width, window_height, scale, key_pressed, canvas_ctx, texture) {
+  constructor(cpu, window_width, window_height, scale, key_pressed, canvas_ctx, texture, screen_state) {
     super();
     this.cpu = cpu;
     this.window_width = window_width;
@@ -2714,6 +4915,7 @@ var Model2 = class extends CustomType {
     this.key_pressed = key_pressed;
     this.canvas_ctx = canvas_ctx;
     this.texture = texture;
+    this.screen_state = screen_state;
   }
 };
 var Tick = class extends CustomType {
@@ -2767,10 +4969,320 @@ function render_effect(msg) {
   );
 }
 function init2(_) {
-  let game_code = toList([32, 6]);
+  let game_code = toList([
+    32,
+    6,
+    6,
+    32,
+    56,
+    6,
+    32,
+    13,
+    6,
+    32,
+    42,
+    6,
+    96,
+    169,
+    2,
+    133,
+    2,
+    169,
+    4,
+    133,
+    3,
+    169,
+    17,
+    133,
+    16,
+    169,
+    16,
+    133,
+    18,
+    169,
+    15,
+    133,
+    20,
+    169,
+    4,
+    133,
+    17,
+    133,
+    19,
+    133,
+    21,
+    96,
+    165,
+    254,
+    133,
+    0,
+    165,
+    254,
+    41,
+    3,
+    24,
+    105,
+    2,
+    133,
+    1,
+    96,
+    32,
+    77,
+    6,
+    32,
+    141,
+    6,
+    32,
+    195,
+    6,
+    32,
+    25,
+    7,
+    32,
+    32,
+    7,
+    32,
+    45,
+    7,
+    76,
+    56,
+    6,
+    165,
+    255,
+    201,
+    119,
+    240,
+    13,
+    201,
+    100,
+    240,
+    20,
+    201,
+    115,
+    240,
+    27,
+    201,
+    97,
+    240,
+    34,
+    96,
+    169,
+    4,
+    36,
+    2,
+    208,
+    38,
+    169,
+    1,
+    133,
+    2,
+    96,
+    169,
+    8,
+    36,
+    2,
+    208,
+    27,
+    169,
+    2,
+    133,
+    2,
+    96,
+    169,
+    1,
+    36,
+    2,
+    208,
+    16,
+    169,
+    4,
+    133,
+    2,
+    96,
+    169,
+    2,
+    36,
+    2,
+    208,
+    5,
+    169,
+    8,
+    133,
+    2,
+    96,
+    96,
+    32,
+    148,
+    6,
+    32,
+    168,
+    6,
+    96,
+    165,
+    0,
+    197,
+    16,
+    208,
+    13,
+    165,
+    1,
+    197,
+    17,
+    208,
+    7,
+    230,
+    3,
+    230,
+    3,
+    32,
+    42,
+    6,
+    96,
+    162,
+    2,
+    181,
+    16,
+    197,
+    16,
+    208,
+    6,
+    181,
+    17,
+    197,
+    17,
+    240,
+    9,
+    232,
+    232,
+    228,
+    3,
+    240,
+    6,
+    76,
+    170,
+    6,
+    76,
+    53,
+    7,
+    96,
+    166,
+    3,
+    202,
+    138,
+    181,
+    16,
+    149,
+    18,
+    202,
+    16,
+    249,
+    165,
+    2,
+    74,
+    176,
+    9,
+    74,
+    176,
+    25,
+    74,
+    176,
+    31,
+    74,
+    176,
+    47,
+    165,
+    16,
+    56,
+    233,
+    32,
+    133,
+    16,
+    144,
+    1,
+    96,
+    198,
+    17,
+    169,
+    1,
+    197,
+    17,
+    240,
+    40,
+    96,
+    230,
+    16,
+    169,
+    31,
+    36,
+    16,
+    240,
+    31,
+    96,
+    165,
+    16,
+    24,
+    105,
+    32,
+    133,
+    16,
+    176,
+    1,
+    96,
+    230,
+    17,
+    169,
+    6,
+    197,
+    17,
+    240,
+    12,
+    96,
+    198,
+    16,
+    165,
+    16,
+    41,
+    31,
+    201,
+    31,
+    240,
+    1,
+    96,
+    76,
+    53,
+    7,
+    160,
+    0,
+    165,
+    254,
+    145,
+    0,
+    96,
+    166,
+    3,
+    169,
+    0,
+    129,
+    16,
+    162,
+    0,
+    169,
+    1,
+    129,
+    16,
+    96,
+    162,
+    0,
+    234,
+    234,
+    202,
+    208,
+    251,
+    96
+  ]);
   let new_cpu = get_new_cpu();
   let cpu_with_game = (() => {
-    let $ = load(new_cpu, game_code);
+    let $ = load_and_run(new_cpu, game_code);
     if ($.isOk()) {
       let loaded_cpu = $[0];
       return loaded_cpu;
@@ -2786,7 +5298,8 @@ function init2(_) {
       10,
       toList([]),
       new None(),
-      new None()
+      new None(),
+      new_screen_state()
     ),
     batch(toList([every2(16, new Tick()), render_effect(new Mounted())]))
   ];
@@ -2800,11 +5313,40 @@ function update(model, msg) {
     if ($ instanceof Some && $1 instanceof Some) {
       let ctx = $[0];
       let texture = $1[0];
-      clearTexture(texture, 0, 0, 0);
-      drawTexture(ctx, texture, 0, 0);
+      let new_screen_state2 = read_screen_state(
+        model.cpu,
+        model.screen_state
+      );
+      let $2 = new_screen_state2.changed;
+      if ($2) {
+        updateTextureWithFrame(
+          texture,
+          model.cpu.memory,
+          model.window_width,
+          model.window_height
+        );
+        drawTexture(ctx, texture, 0, 0);
+      } else {
+      }
+      return [
+        (() => {
+          let _record = model;
+          return new Model2(
+            _record.cpu,
+            _record.window_width,
+            _record.window_height,
+            _record.scale,
+            _record.key_pressed,
+            _record.canvas_ctx,
+            _record.texture,
+            new_screen_state2
+          );
+        })(),
+        none()
+      ];
     } else {
+      return [model, none()];
     }
-    return [model, none()];
   } else if (msg instanceof ContextReady) {
     let ctx = msg[0];
     setCanvasScale(
@@ -2823,24 +5365,87 @@ function update(model, msg) {
           _record.scale,
           _record.key_pressed,
           new Some(ctx),
-          new Some(texture)
+          new Some(texture),
+          _record.screen_state
         );
       })(),
       none()
     ];
   } else if (msg instanceof KeyDown) {
     let key = msg[0];
+    let cpu = (() => {
+      if (key === "w") {
+        let $ = write(model.cpu, 255, 119);
+        if (!$.isOk()) {
+          throw makeError(
+            "let_assert",
+            "gleamness",
+            186,
+            "update",
+            "Pattern match failed, no pattern matched the value.",
+            { value: $ }
+          );
+        }
+        let new_cpu = $[0];
+        return new_cpu;
+      } else if (key === "s") {
+        let $ = write(model.cpu, 255, 115);
+        if (!$.isOk()) {
+          throw makeError(
+            "let_assert",
+            "gleamness",
+            190,
+            "update",
+            "Pattern match failed, no pattern matched the value.",
+            { value: $ }
+          );
+        }
+        let new_cpu = $[0];
+        return new_cpu;
+      } else if (key === "a") {
+        let $ = write(model.cpu, 255, 97);
+        if (!$.isOk()) {
+          throw makeError(
+            "let_assert",
+            "gleamness",
+            194,
+            "update",
+            "Pattern match failed, no pattern matched the value.",
+            { value: $ }
+          );
+        }
+        let new_cpu = $[0];
+        return new_cpu;
+      } else if (key === "d") {
+        let $ = write(model.cpu, 255, 100);
+        if (!$.isOk()) {
+          throw makeError(
+            "let_assert",
+            "gleamness",
+            198,
+            "update",
+            "Pattern match failed, no pattern matched the value.",
+            { value: $ }
+          );
+        }
+        let new_cpu = $[0];
+        return new_cpu;
+      } else {
+        return model.cpu;
+      }
+    })();
     return [
       (() => {
         let _record = model;
         return new Model2(
-          _record.cpu,
+          cpu,
           _record.window_width,
           _record.window_height,
           _record.scale,
           prepend(key, model.key_pressed),
           _record.canvas_ctx,
-          _record.texture
+          _record.texture,
+          _record.screen_state
         );
       })(),
       none()
@@ -2863,7 +5468,8 @@ function update(model, msg) {
           _record.scale,
           updated_keys,
           _record.canvas_ctx,
-          _record.texture
+          _record.texture,
+          _record.screen_state
         );
       })(),
       none()
@@ -2895,7 +5501,7 @@ function main() {
     throw makeError(
       "let_assert",
       "gleamness",
-      160,
+      232,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

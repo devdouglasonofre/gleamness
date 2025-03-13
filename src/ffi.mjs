@@ -41,3 +41,19 @@ export function setPixel(texture, x, y, r, g, b) {
   texture.ctx.fillStyle = `rgb(${r},${g},${b})`;
   texture.ctx.fillRect(x, y, 1, 1);
 }
+
+export function updateTextureWithFrame(texture, frameData, width, height) {
+  frameData = [...frameData]
+  console.log(frameData.filter(v => v !== 0));
+  if (!texture || !texture.ctx) return;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const frameIdx = (y * width + x) * 3;
+      const r = frameData[frameIdx];
+      const g = frameData[frameIdx + 1];
+      const b = frameData[frameIdx + 2];
+      texture.ctx.fillStyle = `rgb(${r},${g},${b})`;
+      texture.ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}

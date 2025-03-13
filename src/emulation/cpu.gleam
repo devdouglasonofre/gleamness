@@ -78,8 +78,11 @@ pub fn reset(cpu: CPU) -> Result(CPU, Nil) {
 
 // Load a program into memory at the ROM address
 pub fn load(cpu: CPU, program: List(Int)) -> Result(CPU, Nil) {
-  // Just for testing purposes
-  load_at_address(cpu, program, 0x0600)
+  // Load program at 0x0600 and set reset vector to point to it
+  case load_at_address(cpu, program, 0x0600) {
+    Ok(cpu_with_program) -> memory.write_u16(cpu_with_program, 0xFFFC, 0x0600)
+    Error(Nil) -> Error(Nil)
+  }
 }
 
 // Load a program into memory at a specified address
@@ -88,11 +91,7 @@ fn load_at_address(
   program: List(Int),
   start_address: Int,
 ) -> Result(CPU, Nil) {
-  // Load the program and set the program counter
-  case load_bytes(cpu, program, start_address) {
-    Ok(new_cpu) -> Ok(types.CPU(..new_cpu, program_counter: start_address))
-    Error(Nil) -> Error(Nil)
-  }
+  load_bytes(cpu, program, start_address)
 }
 
 // Helper function to load program bytes one by one
@@ -101,7 +100,10 @@ fn load_bytes(cpu: CPU, bytes: List(Int), address: Int) -> Result(CPU, Nil) {
     [] -> Ok(cpu)
     [first, ..rest] -> {
       case memory.write(cpu, address, first) {
-        Ok(new_cpu) -> load_bytes(new_cpu, rest, address + 1)
+        Ok(new_cpu) -> {
+          // Recursively load the rest of the bytes at incremented addresses
+          load_bytes(new_cpu, rest, address + 1)
+        }
         Error(Nil) -> Error(Nil)
       }
     }

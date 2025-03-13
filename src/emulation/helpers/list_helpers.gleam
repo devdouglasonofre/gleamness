@@ -1,4 +1,6 @@
-pub fn get_list_value_by_index(list: List(Int), index: Int) -> Result(Int, Nil) {
+import gleam/list
+
+pub fn get_list_value_by_index(list: List(a), index: Int) -> Result(a, Nil) {
   case list, index {
     [], _ -> Error(Nil)
     [first, ..], 0 -> Ok(first)
@@ -8,24 +10,27 @@ pub fn get_list_value_by_index(list: List(Int), index: Int) -> Result(Int, Nil) 
 }
 
 pub fn set_list_value_by_index(
-  list: List(Int),
+  list: List(a),
   index: Int,
-  value: Int,
-) -> Result(List(Int), Nil) {
+  value: a,
+) -> Result(List(a), Nil) {
+  case index < 0 {
+    True -> Error(Nil)
+    False -> set_list_value_by_index_tail(list, index, value, [])
+  }
+}
+
+fn set_list_value_by_index_tail(
+  list: List(a),
+  index: Int,
+  value: a,
+  acc: List(a),
+) -> Result(List(a), Nil) {
   case list, index {
-    // Error cases - empty list or negative index
     [], _ -> Error(Nil)
-    _, i if i < 0 -> Error(Nil)
-
-    // Base case - we found the position to update
-    [_, ..rest], 0 -> Ok([value, ..rest])
-
-    // Recursive case - keep searching
-    [head, ..tail], i -> {
-      case set_list_value_by_index(tail, i - 1, value) {
-        Ok(new_tail) -> Ok([head, ..new_tail])
-        Error(err) -> Error(err)
-      }
-    }
+    [_head, ..rest], 0 ->
+      Ok(list.append(list.append(list.reverse(acc), [value]), rest))
+    [head, ..rest], i ->
+      set_list_value_by_index_tail(rest, i - 1, value, [head, ..acc])
   }
 }
