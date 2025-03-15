@@ -119,17 +119,14 @@ pub fn run(cpu: CPU, callback: fn(CPU) -> CPU) -> CPU {
       // Get instruction metadata
       let instruction = find_instruction(opcode)
 
-      // Advance program counter
-      let cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
-
       // Handle opcode based on instruction metadata
       case instruction {
-        // BRK instruction - just return the current CPU state
-        Ok(instr) if instr.opcode == 0x00 -> cpu
-
         // Handle instruction with proper addressing mode
         Ok(instr) -> {
-          let #(cpu, operand_addr) =
+          // Advance program counter for opcode byte
+          let cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
+
+          let #(cpu_after_fetch, operand_addr) =
             addressing.get_operand_address(
               cpu,
               cpu.bus.cpu_vram,
@@ -137,14 +134,19 @@ pub fn run(cpu: CPU, callback: fn(CPU) -> CPU) -> CPU {
             )
           let operand_value =
             addressing.get_operand_value(
-              cpu,
+              cpu_after_fetch,
               cpu.bus.cpu_vram,
               instr.addressing_mode,
               operand_addr,
             )
 
           io.debug(instr)
-          execute_instruction(cpu, instr, operand_addr, operand_value)
+          execute_instruction(
+            cpu_after_fetch,
+            instr,
+            operand_addr,
+            operand_value,
+          )
         }
 
         // Unknown opcode
@@ -242,8 +244,7 @@ fn execute_instruction(
     "SEI" -> flag_ops.sei(cpu)
     "CLV" -> flag_ops.clv(cpu)
     "NOP" -> flag_ops.nop(cpu)
-    "BRK" -> cpu
-
+    "BRK" -> flag_ops.brk(cpu)
     _ -> cpu
   }
 }

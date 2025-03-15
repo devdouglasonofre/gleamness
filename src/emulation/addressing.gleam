@@ -77,13 +77,21 @@ pub fn get_operand_address(
 
     AbsoluteX -> {
       case fetch_word(cpu, program) {
-        #(new_cpu, addr) -> #(new_cpu, addr + cpu.register_x)
+        #(new_cpu, addr) -> {
+          // Calculate final address accounting for page boundary crossing
+          let final_addr = int.bitwise_and(addr + cpu.register_x, 0xFFFF)
+          #(new_cpu, final_addr)
+        }
       }
     }
 
     AbsoluteY -> {
       case fetch_word(cpu, program) {
-        #(new_cpu, addr) -> #(new_cpu, addr + cpu.register_y)
+        #(new_cpu, addr) -> {
+          // Calculate final address accounting for page boundary crossing
+          let final_addr = int.bitwise_and(addr + cpu.register_y, 0xFFFF)
+          #(new_cpu, final_addr)
+        }
       }
     }
 

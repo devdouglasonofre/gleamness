@@ -3996,14 +3996,16 @@ function get_operand_address(cpu, program, mode) {
     {
       let new_cpu = $[0];
       let addr = $[1];
-      return [new_cpu, addr + cpu.register_x];
+      let final_addr = bitwise_and(addr + cpu.register_x, 65535);
+      return [new_cpu, final_addr];
     }
   } else if (mode instanceof AbsoluteY) {
     let $ = fetch_word(cpu, program);
     {
       let new_cpu = $[0];
       let addr = $[1];
-      return [new_cpu, addr + cpu.register_y];
+      let final_addr = bitwise_and(addr + cpu.register_y, 65535);
+      return [new_cpu, final_addr];
     }
   } else if (mode instanceof Indirect) {
     let $ = fetch_word(cpu, program);
@@ -4697,32 +4699,6 @@ function bvc(cpu, addr) {
   }
 }
 
-// build/dev/javascript/gleamness/emulation/instructions/flag_ops.mjs
-function clc(cpu) {
-  return clear_flag(cpu, flag_carry);
-}
-function sec(cpu) {
-  return set_flag(cpu, flag_carry);
-}
-function cld(cpu) {
-  return clear_flag(cpu, flag_decimal_mode);
-}
-function sed(cpu) {
-  return set_flag(cpu, flag_decimal_mode);
-}
-function cli(cpu) {
-  return clear_flag(cpu, flag_interrupt_disable);
-}
-function sei(cpu) {
-  return set_flag(cpu, flag_interrupt_disable);
-}
-function clv(cpu) {
-  return clear_flag(cpu, flag_overflow);
-}
-function nop(cpu) {
-  return cpu;
-}
-
 // build/dev/javascript/gleamness/emulation/stack.mjs
 function push(cpu, value) {
   let addr = stack_base + cpu.stack_pointer;
@@ -4775,6 +4751,74 @@ function pull(cpu) {
     );
   } else {
     return new Error(void 0);
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/instructions/flag_ops.mjs
+function clc(cpu) {
+  return clear_flag(cpu, flag_carry);
+}
+function sec(cpu) {
+  return set_flag(cpu, flag_carry);
+}
+function cld(cpu) {
+  return clear_flag(cpu, flag_decimal_mode);
+}
+function sed(cpu) {
+  return set_flag(cpu, flag_decimal_mode);
+}
+function cli(cpu) {
+  return clear_flag(cpu, flag_interrupt_disable);
+}
+function sei(cpu) {
+  return set_flag(cpu, flag_interrupt_disable);
+}
+function clv(cpu) {
+  return clear_flag(cpu, flag_overflow);
+}
+function nop(cpu) {
+  return cpu;
+}
+function brk(cpu) {
+  let return_addr = cpu.program_counter + 1;
+  let hi = bitwise_shift_right(return_addr, 8);
+  let lo = bitwise_and(return_addr, 255);
+  let $ = push(cpu, hi);
+  if ($.isOk()) {
+    let cpu1 = $[0];
+    let $1 = push(cpu1, lo);
+    if ($1.isOk()) {
+      let cpu2 = $1[0];
+      let status_with_b = bitwise_or(cpu2.status, 16);
+      let $2 = push(cpu2, status_with_b);
+      if ($2.isOk()) {
+        let cpu3 = $2[0];
+        let cpu4 = set_flag(cpu3, flag_interrupt_disable);
+        let $3 = read_u16(cpu4, 65534);
+        if ($3.isOk()) {
+          let vector = $3[0];
+          let _record = cpu4;
+          return new CPU(
+            _record.register_a,
+            _record.register_x,
+            _record.register_y,
+            _record.status,
+            vector,
+            _record.stack_pointer,
+            _record.memory,
+            _record.bus
+          );
+        } else {
+          return cpu4;
+        }
+      } else {
+        return cpu2;
+      }
+    } else {
+      return cpu1;
+    }
+  } else {
+    return cpu;
   }
 }
 
@@ -5702,7 +5746,7 @@ function execute_instruction(cpu, instruction, operand_addr, operand_value) {
   } else if ($ === "NOP") {
     return nop(cpu);
   } else if ($ === "BRK") {
-    return cpu;
+    return brk(cpu);
   } else {
     return cpu;
   }
@@ -5715,41 +5759,43 @@ function run2(cpu, callback) {
   } else {
     let opcode = $[0];
     let instruction = find_instruction(opcode);
-    let cpu$2 = (() => {
-      let _record = cpu$1;
-      return new CPU(
-        _record.register_a,
-        _record.register_x,
-        _record.register_y,
-        _record.status,
-        cpu$1.program_counter + 1,
-        _record.stack_pointer,
-        _record.memory,
-        _record.bus
-      );
-    })();
-    if (instruction.isOk() && instruction[0].opcode === 0) {
+    if (instruction.isOk()) {
       let instr = instruction[0];
-      return cpu$2;
-    } else if (instruction.isOk()) {
-      let instr = instruction[0];
+      let cpu$2 = (() => {
+        let _record = cpu$1;
+        return new CPU(
+          _record.register_a,
+          _record.register_x,
+          _record.register_y,
+          _record.status,
+          cpu$1.program_counter + 1,
+          _record.stack_pointer,
+          _record.memory,
+          _record.bus
+        );
+      })();
       let $1 = get_operand_address(
         cpu$2,
         cpu$2.bus.cpu_vram,
         instr.addressing_mode
       );
-      let cpu$3 = $1[0];
+      let cpu_after_fetch = $1[0];
       let operand_addr = $1[1];
       let operand_value = get_operand_value(
-        cpu$3,
-        cpu$3.bus.cpu_vram,
+        cpu_after_fetch,
+        cpu$2.bus.cpu_vram,
         instr.addressing_mode,
         operand_addr
       );
       debug(instr);
-      return execute_instruction(cpu$3, instr, operand_addr, operand_value);
+      return execute_instruction(
+        cpu_after_fetch,
+        instr,
+        operand_addr,
+        operand_value
+      );
     } else {
-      return cpu$2;
+      return cpu$1;
     }
   }
 }
