@@ -37,9 +37,7 @@ export function setPixel(texture, x, y, r, g, b) {
 }
 
 export function updateTextureWithFrame(texture, frameData, width, height) {
-  console.log(frameData)
   frameData = [...frameData]
-  console.log(frameData.filter(v => v !== 0));
   if (!texture || !texture.ctx) return;
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {

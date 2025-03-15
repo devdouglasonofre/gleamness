@@ -1449,6 +1449,19 @@ function print_debug(string4) {
     console.log(string4);
   }
 }
+function floor(float4) {
+  return Math.floor(float4);
+}
+function round2(float4) {
+  return Math.round(float4);
+}
+function random_uniform() {
+  const random_uniform_result = Math.random();
+  if (random_uniform_result === 1) {
+    return random_uniform();
+  }
+  return random_uniform_result;
+}
 function new_map() {
   return Dict.new();
 }
@@ -1656,6 +1669,26 @@ function inspectUtfCodepoint(codepoint2) {
   return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
 }
 
+// build/dev/javascript/gleam_stdlib/gleam/float.mjs
+function negate(x) {
+  return -1 * x;
+}
+function round(x) {
+  let $ = x >= 0;
+  if ($) {
+    return round2(x);
+  } else {
+    return 0 - round2(negate(x));
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/int.mjs
+function random(max) {
+  let _pipe = random_uniform() * identity(max);
+  let _pipe$1 = floor(_pipe);
+  return round(_pipe$1);
+}
+
 // build/dev/javascript/gleam_stdlib/gleam/string.mjs
 function drop_start(loop$string, loop$num_graphemes) {
   while (true) {
@@ -1699,6 +1732,7 @@ var concat2 = (xs, ys) => [...xs, ...ys];
 var get1 = (idx, xs) => xs[idx - 1];
 var set1 = (idx, xs, x) => xs.with(idx - 1, x);
 var length2 = (xs) => xs.length;
+var split1 = (idx, xs) => [xs.slice(0, idx - 1), xs.slice(idx - 1)];
 var map3 = (xs, f) => xs.map(f);
 var bsl = (a, b) => a << b;
 var bsr = (a, b) => a >> b;
@@ -1830,6 +1864,15 @@ var NoFreeSlot = class extends CustomType {
     this.left = left;
     this.right = right;
   }
+};
+var Split = class extends CustomType {
+  constructor(prefix, suffix) {
+    super();
+    this.prefix = prefix;
+    this.suffix = suffix;
+  }
+};
+var EmptyPrefix = class extends CustomType {
 };
 function node_size(node) {
   if (node instanceof Balanced) {
@@ -2150,6 +2193,167 @@ function try_set(array4, index3, item) {
   return try_update(array4, index3, (_) => {
     return item;
   });
+}
+function split_node(shift, node, index3) {
+  if (node instanceof Balanced) {
+    let children2 = node.children;
+    let node_index = bsr(index3, shift);
+    let index$1 = index3 - bsl(node_index, shift);
+    let child = get1(node_index + 1, children2);
+    let child_shift = shift - branch_bits;
+    let $ = split_node(child_shift, child, index$1);
+    if ($ instanceof EmptyPrefix && node_index === 0) {
+      return new EmptyPrefix();
+    } else if ($ instanceof EmptyPrefix) {
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let prefix = balanced(shift, before_children);
+      let suffix = balanced(shift, after_children);
+      return new Split(prefix, suffix);
+    } else {
+      let prefix = $.prefix;
+      let suffix = $.suffix;
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let prefix$1 = balanced(shift, append4(before_children, prefix));
+      let suffix$1 = unbalanced(shift, set1(1, after_children, suffix));
+      return new Split(prefix$1, suffix$1);
+    }
+  } else if (node instanceof Unbalanced) {
+    let sizes = node.sizes;
+    let children2 = node.children;
+    let start_search_index = bsr(index3, shift);
+    let node_index = find_size(sizes, start_search_index + 1, index3);
+    let index$1 = (() => {
+      if (node_index === 0) {
+        return index3;
+      } else {
+        return index3 - get1(node_index, sizes);
+      }
+    })();
+    let child = get1(node_index + 1, children2);
+    let child_shift = shift - branch_bits;
+    let $ = split_node(child_shift, child, index$1);
+    if ($ instanceof EmptyPrefix && node_index === 0) {
+      return new EmptyPrefix();
+    } else if ($ instanceof EmptyPrefix) {
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let $2 = split1(node_index + 1, sizes);
+      let before_sizes = $2[0];
+      let after_sizes = $2[1];
+      let before_size = get1(node_index, before_sizes);
+      let after_sizes$1 = map3(
+        after_sizes,
+        (s) => {
+          return s - before_size;
+        }
+      );
+      let prefix = new Unbalanced(before_sizes, before_children);
+      let suffix = new Unbalanced(after_sizes$1, after_children);
+      return new Split(prefix, suffix);
+    } else {
+      let prefix = $.prefix;
+      let suffix = $.suffix;
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let $2 = split1(node_index + 1, sizes);
+      let before_sizes = $2[0];
+      let after_sizes = $2[1];
+      let before_children$1 = append4(before_children, prefix);
+      let before_size = (() => {
+        if (node_index === 0) {
+          return 0;
+        } else {
+          return get1(node_index, before_sizes);
+        }
+      })();
+      let before_sizes$1 = append4(
+        before_sizes,
+        before_size + node_size(prefix)
+      );
+      let after_children$1 = set1(1, after_children, suffix);
+      let after_delta = node_size(suffix) - get1(1, after_sizes);
+      let after_sizes$1 = map3(
+        after_sizes,
+        (s) => {
+          return s + after_delta;
+        }
+      );
+      let prefix$1 = new Unbalanced(before_sizes$1, before_children$1);
+      let suffix$1 = new Unbalanced(after_sizes$1, after_children$1);
+      return new Split(prefix$1, suffix$1);
+    }
+  } else {
+    let children2 = node.children;
+    if (index3 === 0) {
+      return new EmptyPrefix();
+    } else {
+      let $ = split1(index3 + 1, children2);
+      let before = $[0];
+      let after = $[1];
+      return new Split(new Leaf(before), new Leaf(after));
+    }
+  }
+}
+function split2(array4, index3) {
+  if (array4 instanceof Empty2) {
+    return [new Empty2(), new Empty2()];
+  } else if (index3 <= 0) {
+    return [new Empty2(), array4];
+  } else {
+    let shift = array4.shift;
+    let root = array4.root;
+    let $ = node_size(root);
+    if (index3 >= $) {
+      let length$1 = $;
+      return [array4, new Empty2()];
+    } else {
+      let $1 = split_node(shift, root, index3);
+      if ($1 instanceof Split) {
+        let prefix = $1.prefix;
+        let suffix = $1.suffix;
+        return [new Array2(shift, prefix), new Array2(shift, suffix)];
+      } else {
+        return [new Empty2(), array4];
+      }
+    }
+  }
+}
+function drop_first(array4, n) {
+  let $ = split2(array4, n);
+  let result = $[1];
+  return result;
+}
+function take_first(array4, n) {
+  let $ = split2(array4, n);
+  let result = $[0];
+  return result;
+}
+function slice(array4, start3, size) {
+  if (array4 instanceof Empty2 && size === 0) {
+    return new Ok(new Empty2());
+  } else if (array4 instanceof Empty2) {
+    return new Error(void 0);
+  } else {
+    let root = array4.root;
+    let $ = 0 <= start3 && start3 + size <= node_size(root);
+    if ($) {
+      return new Ok(
+        (() => {
+          let _pipe = array4;
+          let _pipe$1 = drop_first(_pipe, start3);
+          return take_first(_pipe$1, size);
+        })()
+      );
+    } else {
+      return new Error(void 0);
+    }
+  }
 }
 var branch_factor = 32;
 function push_node(nodes, node, shift) {
@@ -2551,11 +2755,11 @@ var Effect = class extends CustomType {
     this.all = all2;
   }
 };
-function custom(run2) {
+function custom(run3) {
   return new Effect(
     toList([
       (actions) => {
-        return run2(actions.dispatch, actions.emit, actions.select, actions.root);
+        return run3(actions.dispatch, actions.emit, actions.select, actions.root);
       }
     ])
   );
@@ -4589,7 +4793,7 @@ function jmp(cpu, addr) {
   );
 }
 function jsr(cpu, addr) {
-  let return_addr = cpu.program_counter - 1;
+  let return_addr = cpu.program_counter;
   let hi = bitwise_shift_right(return_addr, 8);
   let $ = push(cpu, hi);
   if ($.isOk()) {
@@ -5503,80 +5707,50 @@ function execute_instruction(cpu, instruction, operand_addr, operand_value) {
     return cpu;
   }
 }
-function interpret_loop(loop$cpu, loop$program, loop$callback) {
-  while (true) {
-    let cpu = loop$cpu;
-    let program = loop$program;
-    let callback = loop$callback;
-    let cpu$1 = callback(cpu);
-    let $ = get(program, cpu$1.program_counter);
-    if (!$.isOk()) {
-      return cpu$1;
-    } else {
-      let opcode = $[0];
-      let instruction = find_instruction(opcode);
-      let cpu$2 = (() => {
-        let _record = cpu$1;
-        return new CPU(
-          _record.register_a,
-          _record.register_x,
-          _record.register_y,
-          _record.status,
-          cpu$1.program_counter + 1,
-          _record.stack_pointer,
-          _record.memory,
-          _record.bus
-        );
-      })();
-      let cpu$3 = (() => {
-        if (instruction.isOk() && instruction[0].opcode === 0) {
-          let instr = instruction[0];
-          return cpu$2;
-        } else if (instruction.isOk()) {
-          let instr = instruction[0];
-          debug(instr);
-          let $1 = get_operand_address(
-            cpu$2,
-            program,
-            instr.addressing_mode
-          );
-          let cpu$32 = $1[0];
-          let operand_addr = $1[1];
-          let operand_value = get_operand_value(
-            cpu$32,
-            program,
-            instr.addressing_mode,
-            operand_addr
-          );
-          return execute_instruction(cpu$32, instr, operand_addr, operand_value);
-        } else {
-          return cpu$2;
-        }
-      })();
-      loop$cpu = cpu$3;
-      loop$program = program;
-      loop$callback = callback;
-    }
-  }
-}
-function run_with_callback(cpu, program, callback) {
-  return interpret_loop(cpu, program, callback);
-}
-function load_and_run_with_callback(cpu, program, callback) {
-  let $ = load(cpu, program);
-  if ($.isOk()) {
-    let new_cpu = $[0];
-    let $1 = reset(new_cpu);
-    if ($1.isOk()) {
-      let reset_cpu = $1[0];
-      return new Ok(
-        run_with_callback(reset_cpu, reset_cpu.bus.cpu_vram, callback)
-      );
-    } else {
-      return new Error(void 0);
-    }
+function run2(cpu, callback) {
+  let cpu$1 = callback(cpu);
+  let $ = get(cpu$1.bus.cpu_vram, cpu$1.program_counter);
+  if (!$.isOk()) {
+    return cpu$1;
   } else {
-    return new Error(void 0);
+    let opcode = $[0];
+    let instruction = find_instruction(opcode);
+    let cpu$2 = (() => {
+      let _record = cpu$1;
+      return new CPU(
+        _record.register_a,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        cpu$1.program_counter + 1,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    })();
+    if (instruction.isOk() && instruction[0].opcode === 0) {
+      let instr = instruction[0];
+      return cpu$2;
+    } else if (instruction.isOk()) {
+      let instr = instruction[0];
+      let $1 = get_operand_address(
+        cpu$2,
+        cpu$2.bus.cpu_vram,
+        instr.addressing_mode
+      );
+      let cpu$3 = $1[0];
+      let operand_addr = $1[1];
+      let operand_value = get_operand_value(
+        cpu$3,
+        cpu$3.bus.cpu_vram,
+        instr.addressing_mode,
+        operand_addr
+      );
+      debug(instr);
+      return execute_instruction(cpu$3, instr, operand_addr, operand_value);
+    } else {
+      return cpu$2;
+    }
   }
 }
 
@@ -5704,7 +5878,6 @@ function get_current_colors(frame, idx) {
   return [r, g, b];
 }
 function read_screen_state(cpu, state) {
-  debug(to_list(state.frame));
   let new_frame = (() => {
     let _pipe = range(512, 1536);
     return fold5(
@@ -5712,6 +5885,7 @@ function read_screen_state(cpu, state) {
       [state.frame, false],
       (acc, addr) => {
         let frame2 = acc[0];
+        let any_changed = acc[1];
         let $ = read(cpu, addr);
         if ($.isOk()) {
           let color_idx = $[0];
@@ -5727,7 +5901,7 @@ function read_screen_state(cpu, state) {
           let new_b = $2[2];
           let $3 = old_r === new_r && old_g === new_g && old_b === new_b;
           if ($3) {
-            return acc;
+            return [frame2, any_changed];
           } else {
             let new_frame2 = update_frame_slice(frame2, frame_idx, color);
             return [new_frame2, true];
@@ -5774,9 +5948,7 @@ function drawTexture(ctx, texture, x, y) {
   ctx.drawImage(texture.canvas, x, y);
 }
 function updateTextureWithFrame(texture, frameData, width2, height2) {
-  console.log(frameData);
   frameData = [...frameData];
-  console.log(frameData.filter((v) => v !== 0));
   if (!texture || !texture.ctx)
     return;
   for (let y = 0; y < height2; y++) {
@@ -5855,8 +6027,8 @@ function render_effect(msg) {
     }
   );
 }
-function init2(_) {
-  let game_code = from_list2(
+function get_snake_game() {
+  return from_list2(
     toList([
       32,
       6,
@@ -6169,25 +6341,33 @@ function init2(_) {
       96
     ])
   );
+}
+function init2(_) {
   let new_cpu = get_new_cpu();
   let cpu_with_game = (() => {
-    let $ = load_and_run_with_callback(
-      new_cpu,
-      game_code,
-      (cpu) => {
-        return cpu;
-      }
-    );
-    if ($.isOk()) {
-      let loaded_cpu = $[0];
-      return loaded_cpu;
+    let $2 = load(new_cpu, get_snake_game());
+    if ($2.isOk()) {
+      let loaded_game_cpu = $2[0];
+      return loaded_game_cpu;
     } else {
       return new_cpu;
     }
   })();
+  let $ = reset(cpu_with_game);
+  if (!$.isOk()) {
+    throw makeError(
+      "let_assert",
+      "gleamness",
+      123,
+      "init",
+      "Pattern match failed, no pattern matched the value.",
+      { value: $ }
+    );
+  }
+  let cpu_reset = $[0];
   return [
     new Model2(
-      cpu_with_game,
+      cpu_reset,
       32,
       32,
       10,
@@ -6196,22 +6376,49 @@ function init2(_) {
       new None(),
       new_screen_state()
     ),
-    batch(
-      toList([every2(1600, new Tick()), render_effect(new Mounted())])
-    )
+    batch(toList([every2(16, new Tick()), render_effect(new Mounted())]))
   ];
 }
 function update(model, msg) {
   if (msg instanceof Mounted) {
     return [model, init_canvas()];
   } else if (msg instanceof Tick) {
+    let random_value = bitwise_and(random(20), 15) + 1;
+    let new_cpu = (() => {
+      let $2 = write(model.cpu, 254, random_value);
+      if ($2.isOk()) {
+        let cpu = $2[0];
+        return cpu;
+      } else {
+        return model.cpu;
+      }
+    })();
+    let new_cpu$1 = run2(
+      new_cpu,
+      (cur_cpu) => {
+        let $2 = slice(new_cpu.bus.cpu_vram, 512, 1536);
+        if (!$2.isOk()) {
+          throw makeError(
+            "let_assert",
+            "gleamness",
+            157,
+            "",
+            "Pattern match failed, no pattern matched the value.",
+            { value: $2 }
+          );
+        }
+        let sliced_vram = $2[0];
+        debug(new_cpu.program_counter);
+        return cur_cpu;
+      }
+    );
     let $ = model.canvas_ctx;
     let $1 = model.texture;
     if ($ instanceof Some && $1 instanceof Some) {
       let ctx = $[0];
       let texture = $1[0];
       let new_screen_state2 = read_screen_state(
-        model.cpu,
+        new_cpu$1,
         model.screen_state
       );
       let $2 = new_screen_state2.changed;
@@ -6229,7 +6436,7 @@ function update(model, msg) {
         (() => {
           let _record = model;
           return new Model2(
-            _record.cpu,
+            new_cpu$1,
             _record.window_width,
             _record.window_height,
             _record.scale,
@@ -6242,7 +6449,22 @@ function update(model, msg) {
         none()
       ];
     } else {
-      return [model, none()];
+      return [
+        (() => {
+          let _record = model;
+          return new Model2(
+            new_cpu$1,
+            _record.window_width,
+            _record.window_height,
+            _record.scale,
+            _record.key_pressed,
+            _record.canvas_ctx,
+            _record.texture,
+            _record.screen_state
+          );
+        })(),
+        none()
+      ];
     }
   } else if (msg instanceof ContextReady) {
     let ctx = msg[0];
@@ -6277,7 +6499,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            193,
+            211,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6291,7 +6513,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            197,
+            215,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6305,7 +6527,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            201,
+            219,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6319,7 +6541,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            205,
+            223,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6398,7 +6620,7 @@ function main() {
     throw makeError(
       "let_assert",
       "gleamness",
-      244,
+      262,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

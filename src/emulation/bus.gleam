@@ -1,6 +1,5 @@
 import emulation/types.{type Bus, Bus}
 import gleam/int
-import gleam/io
 import gleam/result
 import iv
 

@@ -47,8 +47,7 @@ pub fn load_and_run_with_callback(
   case load(cpu, program) {
     Ok(new_cpu) -> {
       case reset(new_cpu) {
-        Ok(reset_cpu) ->
-          Ok(run_with_callback(reset_cpu, reset_cpu.bus.cpu_vram, callback))
+        Ok(reset_cpu) -> Ok(run(reset_cpu, callback))
         Error(Nil) -> Error(Nil)
       }
     }
@@ -109,30 +108,12 @@ fn load_at_address(
   })
 }
 
-// Run the program
-pub fn run(cpu: CPU, program: iv.Array(Int)) -> CPU {
-  interpret_loop(cpu, program, fn(c) { c })
-}
-
-// Run the program with a callback
-pub fn run_with_callback(
-  cpu: CPU,
-  program: iv.Array(Int),
-  callback: fn(CPU) -> CPU,
-) -> CPU {
-  interpret_loop(cpu, program, callback)
-}
-
-// Main interpretation loop
-fn interpret_loop(
-  cpu: CPU,
-  program: iv.Array(Int),
-  callback: fn(CPU) -> CPU,
-) -> CPU {
-  // Execute callback before processing the next instruction
+// Main interpretation loop - now executes only one instruction
+pub fn run(cpu: CPU, callback: fn(CPU) -> CPU) -> CPU {
+  // Execute callback before processing the instruction
   let cpu = callback(cpu)
 
-  case iv.get(program, cpu.program_counter) {
+  case iv.get(cpu.bus.cpu_vram, cpu.program_counter) {
     Error(_) -> cpu
     Ok(opcode) -> {
       // Get instruction metadata
@@ -142,32 +123,33 @@ fn interpret_loop(
       let cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
 
       // Handle opcode based on instruction metadata
-      let cpu = case instruction {
+      case instruction {
         // BRK instruction - just return the current CPU state
         Ok(instr) if instr.opcode == 0x00 -> cpu
 
         // Handle instruction with proper addressing mode
         Ok(instr) -> {
-          io.debug(instr)
-
           let #(cpu, operand_addr) =
-            addressing.get_operand_address(cpu, program, instr.addressing_mode)
+            addressing.get_operand_address(
+              cpu,
+              cpu.bus.cpu_vram,
+              instr.addressing_mode,
+            )
           let operand_value =
             addressing.get_operand_value(
               cpu,
-              program,
+              cpu.bus.cpu_vram,
               instr.addressing_mode,
               operand_addr,
             )
 
+          io.debug(instr)
           execute_instruction(cpu, instr, operand_addr, operand_value)
         }
 
         // Unknown opcode
         Error(_) -> cpu
       }
-
-      interpret_loop(cpu, program, callback)
     }
   }
 }

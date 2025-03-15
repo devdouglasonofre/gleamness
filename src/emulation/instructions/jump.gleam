@@ -9,9 +9,8 @@ pub fn jmp(cpu: CPU, addr: Int) -> CPU {
 
 // Jump to Subroutine
 pub fn jsr(cpu: CPU, addr: Int) -> CPU {
-  // Push return address (PC - 1) to stack
-  // The PC is already pointing to the next instruction
-  let return_addr = cpu.program_counter - 1
+  // Return address should point to byte after JSR instruction
+  let return_addr = cpu.program_counter
 
   // Push high byte
   let hi = int.bitwise_shift_right(return_addr, 8)

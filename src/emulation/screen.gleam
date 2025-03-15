@@ -1,6 +1,5 @@
 import emulation/memory
 import emulation/types.{type CPU}
-import gleam/io
 import iv
 
 pub type Color {
@@ -80,22 +79,21 @@ fn get_current_colors(frame: iv.Array(Int), idx: Int) -> #(Int, Int, Int) {
 }
 
 pub fn read_screen_state(cpu: CPU, state: ScreenState) -> ScreenState {
-  io.debug(iv.to_list(state.frame))
-
   let new_frame =
-    iv.range(0x0200, 0x600)
+    iv.range(0x0200, 0x0600)
     |> iv.fold(from: #(state.frame, False), with: fn(acc, addr) {
-      let #(frame, _) = acc
+      let #(frame, any_changed) = acc
       case memory.read(cpu, addr) {
         Ok(color_idx) -> {
           let color = get_color(color_idx)
+          // Calculate frame index relative to start of screen memory
           let frame_idx = { addr - 0x0200 } * 3
 
           let #(old_r, old_g, old_b) = get_current_colors(frame, frame_idx)
           let #(new_r, new_g, new_b) = color_to_rgb(color)
 
           case old_r == new_r && old_g == new_g && old_b == new_b {
-            True -> acc
+            True -> #(frame, any_changed)
             False -> {
               let new_frame = update_frame_slice(frame, frame_idx, color)
               #(new_frame, True)

@@ -168,6 +168,7 @@ pub fn get_operand_address(
             // Convert to negative
             False -> offset
           }
+          // Use new_cpu program counter since it points to the next instruction
           let target_addr = new_cpu.program_counter + signed_offset
           #(new_cpu, target_addr)
         }

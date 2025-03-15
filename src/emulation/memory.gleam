@@ -1,7 +1,6 @@
 import emulation/bus
 import emulation/types.{type CPU}
 import gleam/int
-import gleam/io
 import gleam/result
 import iv
 
