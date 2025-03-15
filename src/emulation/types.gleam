@@ -1,3 +1,5 @@
+import iv
+
 pub type CPU {
   CPU(
     register_a: Int,
@@ -6,13 +8,13 @@ pub type CPU {
     status: Int,
     program_counter: Int,
     stack_pointer: Int,
-    memory: List(Int),
+    memory: iv.Array(Int),
     bus: Bus,
   )
 }
 
 pub type Bus {
-  Bus(cpu_vram: List(Int))
+  Bus(cpu_vram: iv.Array(Int))
 }
 
 pub type CpuInstruction {
@@ -33,8 +35,8 @@ pub type Mirroring {
 
 pub type Rom {
   Rom(
-    prg_rom: List(Int),
-    chr_rom: List(Int),
+    prg_rom: iv.Array(Int),
+    chr_rom: iv.Array(Int),
     mapper: Int,
     screen_mirroring: Mirroring,
   )

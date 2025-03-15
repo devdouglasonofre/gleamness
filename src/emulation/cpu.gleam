@@ -1,6 +1,5 @@
 import emulation/addressing
 import emulation/helpers/instruction_helpers
-import emulation/helpers/list_helpers
 import emulation/instructions/arithmetic
 import emulation/instructions/branch
 import emulation/instructions/flag_ops
@@ -13,7 +12,8 @@ import emulation/memory
 import emulation/types.{
   type CPU, type CpuInstruction, Bus, flag_unused, stack_reset,
 }
-import gleam/option.{type Option, None, Some}
+import gleam/io
+import iv
 
 // Initialize a new CPU with default state
 pub fn get_new_cpu() -> CPU {
@@ -29,26 +29,26 @@ pub fn get_new_cpu() -> CPU {
     program_counter: 0,
     stack_pointer: stack_reset,
     memory: memory.init_memory(),
-    bus: Bus(memory.init_memory()),
+    bus: Bus(iv.repeat(0, 0x2000)),
   )
 }
 
 // Load a program and run it
-pub fn load_and_run(cpu: CPU, program: List(Int)) -> Result(CPU, Nil) {
+pub fn load_and_run(cpu: CPU, program: iv.Array(Int)) -> Result(CPU, Nil) {
   load_and_run_with_callback(cpu, program, fn(c) { c })
 }
 
 // Load a program and run it with a callback
 pub fn load_and_run_with_callback(
   cpu: CPU,
-  program: List(Int),
+  program: iv.Array(Int),
   callback: fn(CPU) -> CPU,
 ) -> Result(CPU, Nil) {
   case load(cpu, program) {
     Ok(new_cpu) -> {
       case reset(new_cpu) {
         Ok(reset_cpu) ->
-          Ok(run_with_callback(reset_cpu, reset_cpu.memory, callback))
+          Ok(run_with_callback(reset_cpu, reset_cpu.bus.cpu_vram, callback))
         Error(Nil) -> Error(Nil)
       }
     }
@@ -77,60 +77,63 @@ pub fn reset(cpu: CPU) -> Result(CPU, Nil) {
 }
 
 // Load a program into memory at the ROM address
-pub fn load(cpu: CPU, program: List(Int)) -> Result(CPU, Nil) {
-  // Load program at 0x0600 and set reset vector to point to it
+pub fn load(cpu: CPU, program: iv.Array(Int)) -> Result(CPU, Nil) {
   case load_at_address(cpu, program, 0x0600) {
-    Ok(cpu_with_program) -> memory.write_u16(cpu_with_program, 0xFFFC, 0x0600)
-    Error(Nil) -> Error(Nil)
+    Ok(cpu_with_program) -> {
+      memory.write_u16(cpu_with_program, 0xFFFC, 0x0600)
+    }
+    Error(Nil) -> {
+      Error(Nil)
+    }
   }
 }
 
 // Load a program into memory at a specified address
 fn load_at_address(
   cpu: CPU,
-  program: List(Int),
+  program: iv.Array(Int),
   start_address: Int,
 ) -> Result(CPU, Nil) {
-  load_bytes(cpu, program, start_address)
-}
-
-// Helper function to load program bytes one by one
-fn load_bytes(cpu: CPU, bytes: List(Int), address: Int) -> Result(CPU, Nil) {
-  case bytes {
-    [] -> Ok(cpu)
-    [first, ..rest] -> {
-      case memory.write(cpu, address, first) {
-        Ok(new_cpu) -> {
-          // Recursively load the rest of the bytes at incremented addresses
-          load_bytes(new_cpu, rest, address + 1)
+  let length = iv.length(program)
+  // Use iv.fold_until to iterate through indices
+  iv.fold(iv.range(0, length - 1), Ok(cpu), fn(acc, index) {
+    case acc {
+      Error(_) -> acc
+      Ok(current_cpu) -> {
+        case iv.get(program, index) {
+          Ok(byte) -> memory.write(current_cpu, start_address + index, byte)
+          Error(_) -> Error(Nil)
         }
-        Error(Nil) -> Error(Nil)
       }
     }
-  }
+  })
 }
 
 // Run the program
-pub fn run(cpu: CPU, program: List(Int)) -> CPU {
+pub fn run(cpu: CPU, program: iv.Array(Int)) -> CPU {
   interpret_loop(cpu, program, fn(c) { c })
 }
 
 // Run the program with a callback
 pub fn run_with_callback(
   cpu: CPU,
-  program: List(Int),
+  program: iv.Array(Int),
   callback: fn(CPU) -> CPU,
 ) -> CPU {
   interpret_loop(cpu, program, callback)
 }
 
 // Main interpretation loop
-fn interpret_loop(cpu: CPU, program: List(Int), callback: fn(CPU) -> CPU) -> CPU {
+fn interpret_loop(
+  cpu: CPU,
+  program: iv.Array(Int),
+  callback: fn(CPU) -> CPU,
+) -> CPU {
   // Execute callback before processing the next instruction
   let cpu = callback(cpu)
 
-  case list_helpers.get_list_value_by_index(program, cpu.program_counter) {
-    Error(Nil) -> cpu
+  case iv.get(program, cpu.program_counter) {
+    Error(_) -> cpu
     Ok(opcode) -> {
       // Get instruction metadata
       let instruction = find_instruction(opcode)
@@ -141,10 +144,12 @@ fn interpret_loop(cpu: CPU, program: List(Int), callback: fn(CPU) -> CPU) -> CPU
       // Handle opcode based on instruction metadata
       let cpu = case instruction {
         // BRK instruction - just return the current CPU state
-        Some(instr) if instr.opcode == 0x00 -> cpu
+        Ok(instr) if instr.opcode == 0x00 -> cpu
 
         // Handle instruction with proper addressing mode
-        Some(instr) -> {
+        Ok(instr) -> {
+          io.debug(instr)
+
           let #(cpu, operand_addr) =
             addressing.get_operand_address(cpu, program, instr.addressing_mode)
           let operand_value =
@@ -154,11 +159,12 @@ fn interpret_loop(cpu: CPU, program: List(Int), callback: fn(CPU) -> CPU) -> CPU
               instr.addressing_mode,
               operand_addr,
             )
+
           execute_instruction(cpu, instr, operand_addr, operand_value)
         }
 
         // Unknown opcode
-        None -> cpu
+        Error(_) -> cpu
       }
 
       interpret_loop(cpu, program, callback)
@@ -167,24 +173,12 @@ fn interpret_loop(cpu: CPU, program: List(Int), callback: fn(CPU) -> CPU) -> CPU
 }
 
 // Find the instruction metadata for a given opcode
-fn find_instruction(opcode: Int) -> Option(CpuInstruction) {
+fn find_instruction(opcode: Int) -> Result(CpuInstruction, Nil) {
   let instructions = instruction_helpers.get_all_instructions()
-  find_matching_instruction(instructions, opcode)
-}
+  // Convert to iv array for more efficient lookup
 
-// Helper to find the matching instruction from a list
-fn find_matching_instruction(
-  instructions: List(CpuInstruction),
-  opcode: Int,
-) -> Option(CpuInstruction) {
-  case instructions {
-    [] -> None
-    [instr, ..rest] ->
-      case instr.opcode == opcode {
-        True -> Some(instr)
-        False -> find_matching_instruction(rest, opcode)
-      }
-  }
+  // Find the instruction with matching opcode
+  iv.find(instructions, fn(instr) { instr.opcode == opcode })
 }
 
 // Execute an instruction with the provided operand address and value

@@ -1,83 +1,103 @@
 import emulation/memory
 import emulation/types.{type CPU}
-import gleam/list
+import gleam/io
+import iv
 
 pub type Color {
-  Color(r: Int, g: Int, b: Int)
+  Black
+  White
+  Grey
+  Red
+  Green
+  Blue
+  Magenta
+  Yellow
+  Cyan
 }
 
 pub type ScreenState {
-  ScreenState(frame: List(Int), changed: Bool)
+  ScreenState(frame: iv.Array(Int), changed: Bool)
 }
 
 pub fn new_screen_state() -> ScreenState {
-  ScreenState(frame: list.repeat(0, 32 * 32 * 3), changed: False)
+  ScreenState(frame: iv.repeat(0, 32 * 32 * 3), changed: False)
 }
 
 pub fn get_color(byte: Int) -> Color {
   case byte {
-    0 -> Color(r: 0, g: 0, b: 0)
-    // BLACK
-    1 -> Color(r: 255, g: 255, b: 255)
-    // WHITE
-    2 | 9 -> Color(r: 128, g: 128, b: 128)
-    // GREY
-    3 | 10 -> Color(r: 255, g: 0, b: 0)
-    // RED
-    4 | 11 -> Color(r: 0, g: 255, b: 0)
-    // GREEN
-    5 | 12 -> Color(r: 0, g: 0, b: 255)
-    // BLUE
-    6 | 13 -> Color(r: 255, g: 0, b: 255)
-    // MAGENTA
-    7 | 14 -> Color(r: 255, g: 255, b: 0)
-    // YELLOW
-    _ -> Color(r: 0, g: 255, b: 255)
-    // CYAN
+    0 -> Black
+    1 -> White
+    2 | 9 -> Grey
+    3 | 10 -> Red
+    4 | 11 -> Green
+    5 | 12 -> Blue
+    6 | 13 -> Magenta
+    7 | 14 -> Yellow
+    _ -> Cyan
   }
 }
 
-fn update_frame_slice(frame: List(Int), idx: Int, value: Int) -> List(Int) {
-  let before = list.take(frame, idx)
-  let after = list.drop(frame, idx + 1)
-  list.append(before, [value, ..after])
+fn color_to_rgb(color: Color) -> #(Int, Int, Int) {
+  case color {
+    Black -> #(0, 0, 0)
+    White -> #(255, 255, 255)
+    Grey -> #(128, 128, 128)
+    Red -> #(255, 0, 0)
+    Green -> #(0, 255, 0)
+    Blue -> #(0, 0, 255)
+    Magenta -> #(255, 0, 255)
+    Yellow -> #(255, 255, 0)
+    Cyan -> #(0, 255, 255)
+  }
 }
 
-fn update_frame_with_color(
-  frame: List(Int),
+fn update_frame_slice(
+  frame: iv.Array(Int),
   frame_idx: Int,
   color: Color,
-) -> List(Int) {
+) -> iv.Array(Int) {
+  let #(r, g, b) = color_to_rgb(color)
   frame
-  |> fn(f) { update_frame_slice(f, frame_idx, color.r) }
-  |> fn(f) { update_frame_slice(f, frame_idx + 1, color.g) }
-  |> fn(f) { update_frame_slice(f, frame_idx + 2, color.b) }
+  |> iv.try_set(frame_idx, r)
+  |> iv.try_set(frame_idx + 1, g)
+  |> iv.try_set(frame_idx + 2, b)
 }
 
-fn get_current_colors(frame: List(Int), idx: Int) -> List(Int) {
-  case list.drop(frame, idx) {
-    [r, g, b, ..] -> [r, g, b]
-    _ -> []
+fn get_current_colors(frame: iv.Array(Int), idx: Int) -> #(Int, Int, Int) {
+  let r = case iv.get(frame, idx) {
+    Ok(v) -> v
+    Error(_) -> 0
   }
+  let g = case iv.get(frame, idx + 1) {
+    Ok(v) -> v
+    Error(_) -> 0
+  }
+  let b = case iv.get(frame, idx + 2) {
+    Ok(v) -> v
+    Error(_) -> 0
+  }
+  #(r, g, b)
 }
 
 pub fn read_screen_state(cpu: CPU, state: ScreenState) -> ScreenState {
+  io.debug(iv.to_list(state.frame))
+
   let new_frame =
-    list.range(0x0200, 0x600)
-    |> list.fold(from: #(state.frame, False), with: fn(acc, addr) {
+    iv.range(0x0200, 0x600)
+    |> iv.fold(from: #(state.frame, False), with: fn(acc, addr) {
       let #(frame, _) = acc
       case memory.read(cpu, addr) {
         Ok(color_idx) -> {
           let color = get_color(color_idx)
           let frame_idx = { addr - 0x0200 } * 3
 
-          let current_colors = get_current_colors(frame, frame_idx)
-          case current_colors {
-            [old_r, old_g, old_b]
-              if old_r == color.r && old_g == color.g && old_b == color.b
-            -> acc
-            _ -> {
-              let new_frame = update_frame_with_color(frame, frame_idx, color)
+          let #(old_r, old_g, old_b) = get_current_colors(frame, frame_idx)
+          let #(new_r, new_g, new_b) = color_to_rgb(color)
+
+          case old_r == new_r && old_g == new_g && old_b == new_b {
+            True -> acc
+            False -> {
+              let new_frame = update_frame_slice(frame, frame_idx, color)
               #(new_frame, True)
             }
           }
@@ -87,5 +107,5 @@ pub fn read_screen_state(cpu: CPU, state: ScreenState) -> ScreenState {
     })
 
   let #(frame, changed) = new_frame
-  ScreenState(frame: frame, changed: changed)
+  ScreenState(frame: frame, changed: changed || state.changed)
 }

@@ -5,26 +5,27 @@ import emulation/types.{
   flag_overflow, flag_zero,
 }
 import gleam/int
+import iv
 
 // Logical AND
 pub fn and(cpu: CPU, value: Int) -> CPU {
   let result = int.bitwise_and(cpu.register_a, value)
   let cpu = types.CPU(..cpu, register_a: result)
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Logical Exclusive OR
 pub fn eor(cpu: CPU, value: Int) -> CPU {
   let result = int.bitwise_exclusive_or(cpu.register_a, value)
   let cpu = types.CPU(..cpu, register_a: result)
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Logical Inclusive OR
 pub fn ora(cpu: CPU, value: Int) -> CPU {
   let result = int.bitwise_or(cpu.register_a, value)
   let cpu = types.CPU(..cpu, register_a: result)
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Bit Test
@@ -85,7 +86,7 @@ pub fn asl(cpu: CPU, addr: Int, value: Int, mode: AddressingMode) -> CPU {
     }
   }
 
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Logical Shift Right
@@ -117,7 +118,7 @@ pub fn lsr(cpu: CPU, addr: Int, value: Int, mode: AddressingMode) -> CPU {
     }
   }
 
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Rotate Left
@@ -159,7 +160,7 @@ pub fn rol(cpu: CPU, addr: Int, value: Int, mode: AddressingMode) -> CPU {
     }
   }
 
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Rotate Right
@@ -197,5 +198,5 @@ pub fn ror(cpu: CPU, addr: Int, value: Int, mode: AddressingMode) -> CPU {
     }
   }
 
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }

@@ -1,23 +1,24 @@
 import emulation/flags
 import emulation/memory
 import emulation/types.{type CPU, flag_negative, flag_zero}
+import iv
 
 // Load Accumulator with a value
 pub fn lda(cpu: CPU, value: Int) -> CPU {
   let cpu = types.CPU(..cpu, register_a: value)
-  flags.update_flags(cpu, value, [flag_zero, flag_negative])
+  flags.update_flags(cpu, value, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Load X Register with a value
 pub fn ldx(cpu: CPU, value: Int) -> CPU {
   let cpu = types.CPU(..cpu, register_x: value)
-  flags.update_flags(cpu, value, [flag_zero, flag_negative])
+  flags.update_flags(cpu, value, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Load Y Register with a value
 pub fn ldy(cpu: CPU, value: Int) -> CPU {
   let cpu = types.CPU(..cpu, register_y: value)
-  flags.update_flags(cpu, value, [flag_zero, flag_negative])
+  flags.update_flags(cpu, value, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Store Accumulator to memory

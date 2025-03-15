@@ -8,10 +8,10 @@ var CustomType = class {
   }
 };
 var List = class {
-  static fromArray(array3, tail) {
+  static fromArray(array4, tail) {
     let t = tail || new Empty();
-    for (let i = array3.length - 1; i >= 0; --i) {
-      t = new NonEmpty(array3[i], t);
+    for (let i = array4.length - 1; i >= 0; --i) {
+      t = new NonEmpty(array4[i], t);
     }
     return t;
   }
@@ -38,12 +38,12 @@ var List = class {
   // @internal
   countLength() {
     let current = this;
-    let length2 = 0;
+    let length4 = 0;
     while (current) {
       current = current.tail;
-      length2++;
+      length4++;
     }
-    return length2 - 1;
+    return length4 - 1;
   }
 };
 function prepend(element2, tail) {
@@ -259,6 +259,11 @@ function bitArrayByteAt(buffer, bitOffset, index3) {
     return a | b;
   }
 }
+var UtfCodepoint = class {
+  constructor(value) {
+    this.value = value;
+  }
+};
 var isBitArrayDeprecationMessagePrinted = {};
 function bitArrayPrintDeprecationWarning(name, message) {
   if (isBitArrayDeprecationMessagePrinted[name]) {
@@ -317,9 +322,9 @@ function isEqual(x, y) {
       } catch {
       }
     }
-    let [keys2, get] = getters(a);
+    let [keys2, get2] = getters(a);
     for (let k of keys2(a)) {
-      values2.push(get(a, k), get(b, k));
+      values2.push(get2(a, k), get2(b, k));
     }
   }
   return true;
@@ -372,14 +377,6 @@ function makeError(variant, module, line, fn, message, extra) {
     error[k] = extra[k];
   return error;
 }
-
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
 
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
@@ -453,32 +450,8 @@ function reverse_and_prepend(loop$prefix, loop$suffix) {
 function reverse(list2) {
   return reverse_and_prepend(list2, toList([]));
 }
-function filter_loop(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let first$1 = list2.head;
-      let rest$1 = list2.tail;
-      let new_acc = (() => {
-        let $ = fun(first$1);
-        if ($) {
-          return prepend(first$1, acc);
-        } else {
-          return acc;
-        }
-      })();
-      loop$list = rest$1;
-      loop$fun = fun;
-      loop$acc = new_acc;
-    }
-  }
-}
-function filter(list2, predicate) {
-  return filter_loop(list2, predicate, toList([]));
+function is_empty(list2) {
+  return isEqual(list2, toList([]));
 }
 function map_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
@@ -499,48 +472,6 @@ function map_loop(loop$list, loop$fun, loop$acc) {
 function map(list2, fun) {
   return map_loop(list2, fun, toList([]));
 }
-function drop(loop$list, loop$n) {
-  while (true) {
-    let list2 = loop$list;
-    let n = loop$n;
-    let $ = n <= 0;
-    if ($) {
-      return list2;
-    } else {
-      if (list2.hasLength(0)) {
-        return toList([]);
-      } else {
-        let rest$1 = list2.tail;
-        loop$list = rest$1;
-        loop$n = n - 1;
-      }
-    }
-  }
-}
-function take_loop(loop$list, loop$n, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let n = loop$n;
-    let acc = loop$acc;
-    let $ = n <= 0;
-    if ($) {
-      return reverse(acc);
-    } else {
-      if (list2.hasLength(0)) {
-        return reverse(acc);
-      } else {
-        let first$1 = list2.head;
-        let rest$1 = list2.tail;
-        loop$list = rest$1;
-        loop$n = n - 1;
-        loop$acc = prepend(first$1, acc);
-      }
-    }
-  }
-}
-function take(list2, n) {
-  return take_loop(list2, n, toList([]));
-}
 function append_loop(loop$first, loop$second) {
   while (true) {
     let first2 = loop$first;
@@ -557,6 +488,9 @@ function append_loop(loop$first, loop$second) {
 }
 function append(first2, second) {
   return append_loop(reverse(first2), second);
+}
+function prepend2(list2, item) {
+  return prepend(item, list2);
 }
 function fold(loop$list, loop$initial, loop$fun) {
   while (true) {
@@ -595,46 +529,6 @@ function index_fold_loop(loop$over, loop$acc, loop$with, loop$index) {
 function index_fold(list2, initial, fun) {
   return index_fold_loop(list2, initial, fun, 0);
 }
-function range_loop(loop$start, loop$stop, loop$acc) {
-  while (true) {
-    let start3 = loop$start;
-    let stop = loop$stop;
-    let acc = loop$acc;
-    let $ = compare2(start3, stop);
-    if ($ instanceof Eq) {
-      return prepend(stop, acc);
-    } else if ($ instanceof Gt) {
-      loop$start = start3;
-      loop$stop = stop + 1;
-      loop$acc = prepend(stop, acc);
-    } else {
-      loop$start = start3;
-      loop$stop = stop - 1;
-      loop$acc = prepend(stop, acc);
-    }
-  }
-}
-function range(start3, stop) {
-  return range_loop(start3, stop, toList([]));
-}
-function repeat_loop(loop$item, loop$times, loop$acc) {
-  while (true) {
-    let item = loop$item;
-    let times = loop$times;
-    let acc = loop$acc;
-    let $ = times <= 0;
-    if ($) {
-      return acc;
-    } else {
-      loop$item = item;
-      loop$times = times - 1;
-      loop$acc = prepend(item, acc);
-    }
-  }
-}
-function repeat(a, times) {
-  return repeat_loop(a, times, toList([]));
-}
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
 function map2(result, fun) {
@@ -662,6 +556,22 @@ function try$(result, fun) {
   } else {
     let e = result[0];
     return new Error(e);
+  }
+}
+function unwrap(result, default$) {
+  if (result.isOk()) {
+    let v = result[0];
+    return v;
+  } else {
+    return default$;
+  }
+}
+function replace_error(result, error) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(x);
+  } else {
+    return new Error(error);
   }
 }
 
@@ -1467,6 +1377,19 @@ function identity(x) {
 function to_string(term) {
   return term.toString();
 }
+function float_to_string(float4) {
+  const string4 = float4.toString().replace("+", "");
+  if (string4.indexOf(".") >= 0) {
+    return string4;
+  } else {
+    const index3 = string4.indexOf("e");
+    if (index3 >= 0) {
+      return string4.slice(0, index3) + ".0" + string4.slice(index3);
+    } else {
+      return string4 + ".0";
+    }
+  }
+}
 var segmenter = void 0;
 function graphemes_iterator(string4) {
   if (globalThis.Intl && Intl.Segmenter) {
@@ -1517,21 +1440,30 @@ var unicode_whitespaces = [
 ].join("");
 var trim_start_regex = new RegExp(`^[${unicode_whitespaces}]*`);
 var trim_end_regex = new RegExp(`[${unicode_whitespaces}]*$`);
+function print_debug(string4) {
+  if (typeof process === "object" && process.stderr?.write) {
+    process.stderr.write(string4 + "\n");
+  } else if (typeof Deno === "object") {
+    Deno.stderr.writeSync(new TextEncoder().encode(string4 + "\n"));
+  } else {
+    console.log(string4);
+  }
+}
 function new_map() {
   return Dict.new();
 }
-function map_to_list(map4) {
-  return List.fromArray(map4.entries());
+function map_to_list(map5) {
+  return List.fromArray(map5.entries());
 }
-function map_get(map4, key) {
-  const value = map4.get(key, NOT_FOUND);
+function map_get(map5, key) {
+  const value = map5.get(key, NOT_FOUND);
   if (value === NOT_FOUND) {
     return new Error(Nil);
   }
   return new Ok(value);
 }
-function map_insert(key, value, map4) {
-  return map4.set(key, value);
+function map_insert(key, value, map5) {
+  return map5.set(key, value);
 }
 function classify_dynamic(data) {
   if (typeof data === "string") {
@@ -1610,20 +1542,118 @@ function bitwise_shift_left(x, y) {
 function bitwise_shift_right(x, y) {
   return Number(BigInt(x) >> BigInt(y));
 }
-
-// build/dev/javascript/gleam_stdlib/gleam/int.mjs
-function compare2(a, b) {
-  let $ = a === b;
-  if ($) {
-    return new Eq();
-  } else {
-    let $1 = a < b;
-    if ($1) {
-      return new Lt();
-    } else {
-      return new Gt();
+function inspect(v) {
+  const t = typeof v;
+  if (v === true)
+    return "True";
+  if (v === false)
+    return "False";
+  if (v === null)
+    return "//js(null)";
+  if (v === void 0)
+    return "Nil";
+  if (t === "string")
+    return inspectString(v);
+  if (t === "bigint" || Number.isInteger(v))
+    return v.toString();
+  if (t === "number")
+    return float_to_string(v);
+  if (Array.isArray(v))
+    return `#(${v.map(inspect).join(", ")})`;
+  if (v instanceof List)
+    return inspectList(v);
+  if (v instanceof UtfCodepoint)
+    return inspectUtfCodepoint(v);
+  if (v instanceof BitArray)
+    return inspectBitArray(v);
+  if (v instanceof CustomType)
+    return inspectCustomType(v);
+  if (v instanceof Dict)
+    return inspectDict(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(inspect).join(", ")}))`;
+  if (v instanceof RegExp)
+    return `//js(${v})`;
+  if (v instanceof Date)
+    return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return inspectObject(v);
+}
+function inspectString(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    switch (char) {
+      case "\n":
+        new_str += "\\n";
+        break;
+      case "\r":
+        new_str += "\\r";
+        break;
+      case "	":
+        new_str += "\\t";
+        break;
+      case "\f":
+        new_str += "\\f";
+        break;
+      case "\\":
+        new_str += "\\\\";
+        break;
+      case '"':
+        new_str += '\\"';
+        break;
+      default:
+        if (char < " " || char > "~" && char < "\xA0") {
+          new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+        } else {
+          new_str += char;
+        }
     }
   }
+  new_str += '"';
+  return new_str;
+}
+function inspectDict(map5) {
+  let body = "dict.from_list([";
+  let first2 = true;
+  map5.forEach((value, key) => {
+    if (!first2)
+      body = body + ", ";
+    body = body + "#(" + inspect(key) + ", " + inspect(value) + ")";
+    first2 = false;
+  });
+  return body + "])";
+}
+function inspectObject(v) {
+  const name = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${inspect(k)}: ${inspect(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name === "Object" ? "" : name + " ";
+  return `//js(${head}{${body}})`;
+}
+function inspectCustomType(record) {
+  const props = Object.keys(record).map((label) => {
+    const value = inspect(record[label]);
+    return isNaN(parseInt(label)) ? `${label}: ${value}` : value;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function inspectList(list2) {
+  return `[${list2.toArray().map(inspect).join(", ")}]`;
+}
+function inspectBitArray(bits) {
+  return `<<${Array.from(bits.buffer).join(", ")}>>`;
+}
+function inspectUtfCodepoint(codepoint2) {
+  return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/string.mjs
@@ -1646,6 +1676,864 @@ function drop_start(loop$string, loop$num_graphemes) {
     }
   }
 }
+function inspect2(term) {
+  let _pipe = inspect(term);
+  return identity(_pipe);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/io.mjs
+function debug(term) {
+  let _pipe = term;
+  let _pipe$1 = inspect2(_pipe);
+  print_debug(_pipe$1);
+  return term;
+}
+
+// build/dev/javascript/iv/iv_ffi.mjs
+var empty = () => [];
+var singleton = (x) => [x];
+var pair = (x, y) => [x, y];
+var append4 = (xs, x) => [...xs, x];
+var prepend3 = (xs, x) => [x, ...xs];
+var concat2 = (xs, ys) => [...xs, ...ys];
+var get1 = (idx, xs) => xs[idx - 1];
+var set1 = (idx, xs, x) => xs.with(idx - 1, x);
+var length2 = (xs) => xs.length;
+var map3 = (xs, f) => xs.map(f);
+var bsl = (a, b) => a << b;
+var bsr = (a, b) => a >> b;
+
+// build/dev/javascript/iv/iv/internal/vector.mjs
+function fold_loop(loop$xs, loop$state, loop$idx, loop$len, loop$fun) {
+  while (true) {
+    let xs = loop$xs;
+    let state = loop$state;
+    let idx = loop$idx;
+    let len = loop$len;
+    let fun = loop$fun;
+    let $ = idx <= len;
+    if ($) {
+      loop$xs = xs;
+      loop$state = fun(state, get1(idx, xs));
+      loop$idx = idx + 1;
+      loop$len = len;
+      loop$fun = fun;
+    } else {
+      return state;
+    }
+  }
+}
+function fold3(xs, state, fun) {
+  let len = length2(xs);
+  return fold_loop(xs, state, 1, len, fun);
+}
+function fold_skip_first(xs, state, fun) {
+  let len = length2(xs);
+  return fold_loop(xs, state, 2, len, fun);
+}
+function fold_right_loop(loop$xs, loop$state, loop$idx, loop$fun) {
+  while (true) {
+    let xs = loop$xs;
+    let state = loop$state;
+    let idx = loop$idx;
+    let fun = loop$fun;
+    let $ = idx > 0;
+    if ($) {
+      loop$xs = xs;
+      loop$state = fun(state, get1(idx, xs));
+      loop$idx = idx - 1;
+      loop$fun = fun;
+    } else {
+      return state;
+    }
+  }
+}
+function fold_right(xs, state, fun) {
+  let len = length2(xs);
+  return fold_right_loop(xs, state, len, fun);
+}
+function find_map_loop(loop$xs, loop$idx, loop$len, loop$fun) {
+  while (true) {
+    let xs = loop$xs;
+    let idx = loop$idx;
+    let len = loop$len;
+    let fun = loop$fun;
+    let $ = idx <= len;
+    if ($) {
+      let item = get1(idx, xs);
+      let $1 = fun(item);
+      if ($1.isOk()) {
+        let result = $1;
+        return result;
+      } else {
+        loop$xs = xs;
+        loop$idx = idx + 1;
+        loop$len = len;
+        loop$fun = fun;
+      }
+    } else {
+      return new Error(void 0);
+    }
+  }
+}
+function find_map(xs, fun) {
+  let len = length2(xs);
+  return find_map_loop(xs, 1, len, fun);
+}
+
+// build/dev/javascript/iv/iv.mjs
+var Empty2 = class extends CustomType {
+};
+var Array2 = class extends CustomType {
+  constructor(shift, root) {
+    super();
+    this.shift = shift;
+    this.root = root;
+  }
+};
+var Balanced = class extends CustomType {
+  constructor(size, children2) {
+    super();
+    this.size = size;
+    this.children = children2;
+  }
+};
+var Unbalanced = class extends CustomType {
+  constructor(sizes, children2) {
+    super();
+    this.sizes = sizes;
+    this.children = children2;
+  }
+};
+var Leaf = class extends CustomType {
+  constructor(children2) {
+    super();
+    this.children = children2;
+  }
+};
+var Builder = class extends CustomType {
+  constructor(nodes, items) {
+    super();
+    this.nodes = nodes;
+    this.items = items;
+  }
+};
+var Concatenated = class extends CustomType {
+  constructor(merged) {
+    super();
+    this.merged = merged;
+  }
+};
+var NoFreeSlot = class extends CustomType {
+  constructor(left, right) {
+    super();
+    this.left = left;
+    this.right = right;
+  }
+};
+function node_size(node) {
+  if (node instanceof Balanced) {
+    let size = node.size;
+    return size;
+  } else if (node instanceof Leaf) {
+    let children2 = node.children;
+    return length2(children2);
+  } else {
+    let sizes = node.sizes;
+    return get1(length2(sizes), sizes);
+  }
+}
+function compute_sizes(nodes) {
+  let first_size = node_size(get1(1, nodes));
+  return fold_skip_first(
+    nodes,
+    singleton(first_size),
+    (sizes, node) => {
+      let size = get1(length2(sizes), sizes) + node_size(node);
+      return append4(sizes, size);
+    }
+  );
+}
+function unbalanced(_, nodes) {
+  let sizes = compute_sizes(nodes);
+  return new Unbalanced(sizes, nodes);
+}
+function wrap(item) {
+  return new Array2(0, new Leaf(singleton(item)));
+}
+function builder_new() {
+  return new Builder(toList([]), empty());
+}
+function length3(array4) {
+  if (array4 instanceof Empty2) {
+    return 0;
+  } else {
+    let root = array4.root;
+    return node_size(root);
+  }
+}
+function find_size(loop$sizes, loop$size_idx_plus_one, loop$index) {
+  while (true) {
+    let sizes = loop$sizes;
+    let size_idx_plus_one = loop$size_idx_plus_one;
+    let index3 = loop$index;
+    let $ = get1(size_idx_plus_one, sizes) > index3;
+    if ($) {
+      return size_idx_plus_one - 1;
+    } else {
+      loop$sizes = sizes;
+      loop$size_idx_plus_one = size_idx_plus_one + 1;
+      loop$index = index3;
+    }
+  }
+}
+function node_find_map(node, fun) {
+  if (node instanceof Leaf) {
+    let children2 = node.children;
+    return find_map(children2, fun);
+  } else if (node instanceof Balanced) {
+    let children2 = node.children;
+    return find_map(
+      children2,
+      (_capture) => {
+        return node_find_map(_capture, fun);
+      }
+    );
+  } else {
+    let children2 = node.children;
+    return find_map(
+      children2,
+      (_capture) => {
+        return node_find_map(_capture, fun);
+      }
+    );
+  }
+}
+function find_map2(array4, is_desired) {
+  if (array4 instanceof Empty2) {
+    return new Error(void 0);
+  } else {
+    let root = array4.root;
+    return node_find_map(root, is_desired);
+  }
+}
+function find2(array4, is_desired) {
+  return find_map2(
+    array4,
+    (item) => {
+      let $ = is_desired(item);
+      if ($) {
+        return new Ok(item);
+      } else {
+        return new Error(void 0);
+      }
+    }
+  );
+}
+function fold_node(node, state, fun) {
+  if (node instanceof Balanced) {
+    let children2 = node.children;
+    return fold3(
+      children2,
+      state,
+      (state2, node2) => {
+        return fold_node(node2, state2, fun);
+      }
+    );
+  } else if (node instanceof Unbalanced) {
+    let children2 = node.children;
+    return fold3(
+      children2,
+      state,
+      (state2, node2) => {
+        return fold_node(node2, state2, fun);
+      }
+    );
+  } else {
+    let children2 = node.children;
+    return fold3(children2, state, fun);
+  }
+}
+function fold5(array4, state, fun) {
+  if (array4 instanceof Empty2) {
+    return state;
+  } else {
+    let root = array4.root;
+    return fold_node(root, state, fun);
+  }
+}
+function fold_right_node(node, state, fun) {
+  if (node instanceof Balanced) {
+    let children2 = node.children;
+    return fold_right(
+      children2,
+      state,
+      (state2, node2) => {
+        return fold_right_node(node2, state2, fun);
+      }
+    );
+  } else if (node instanceof Unbalanced) {
+    let children2 = node.children;
+    return fold_right(
+      children2,
+      state,
+      (state2, node2) => {
+        return fold_right_node(node2, state2, fun);
+      }
+    );
+  } else {
+    let children2 = node.children;
+    return fold_right(children2, state, fun);
+  }
+}
+function fold_right2(array4, state, fun) {
+  if (array4 instanceof Empty2) {
+    return state;
+  } else {
+    let root = array4.root;
+    return fold_right_node(root, state, fun);
+  }
+}
+function to_list(array4) {
+  return fold_right2(array4, toList([]), prepend2);
+}
+function balanced(shift, nodes) {
+  let len = length2(nodes);
+  let last_child = get1(len, nodes);
+  let max_size = bsl(1, shift);
+  let size = max_size * (len - 1) + node_size(last_child);
+  return new Balanced(size, nodes);
+}
+function branch(shift, nodes) {
+  let len = length2(nodes);
+  let max_size = bsl(1, shift);
+  let sizes = compute_sizes(nodes);
+  let prefix_size = (() => {
+    if (len === 1) {
+      return 0;
+    } else {
+      return get1(len - 1, sizes);
+    }
+  })();
+  let is_balanced = prefix_size === max_size * (len - 1);
+  if (is_balanced) {
+    let size = get1(len, sizes);
+    return new Balanced(size, nodes);
+  } else {
+    return new Unbalanced(sizes, nodes);
+  }
+}
+var branch_bits = 5;
+function array(shift, nodes) {
+  let $ = length2(nodes);
+  if ($ === 0) {
+    return new Empty2();
+  } else if ($ === 1) {
+    return new Array2(shift, get1(1, nodes));
+  } else {
+    let shift$1 = shift + branch_bits;
+    return new Array2(shift$1, branch(shift$1, nodes));
+  }
+}
+function get_from_node(loop$node, loop$shift, loop$index) {
+  while (true) {
+    let node = loop$node;
+    let shift = loop$shift;
+    let index3 = loop$index;
+    if (node instanceof Balanced) {
+      let children2 = node.children;
+      let node_index = bsr(index3, shift);
+      let index$1 = index3 - bsl(node_index, shift);
+      let child = get1(node_index + 1, children2);
+      loop$node = child;
+      loop$shift = shift - branch_bits;
+      loop$index = index$1;
+    } else if (node instanceof Unbalanced) {
+      let sizes = node.sizes;
+      let children2 = node.children;
+      let start_search_index = bsr(index3, shift);
+      let node_index = find_size(sizes, start_search_index + 1, index3);
+      let index$1 = (() => {
+        if (node_index === 0) {
+          return index3;
+        } else {
+          return index3 - get1(node_index, sizes);
+        }
+      })();
+      let child = get1(node_index + 1, children2);
+      loop$node = child;
+      loop$shift = shift - branch_bits;
+      loop$index = index$1;
+    } else {
+      let children2 = node.children;
+      return get1(index3 + 1, children2);
+    }
+  }
+}
+function get(array4, index3) {
+  if (array4 instanceof Array2) {
+    let shift = array4.shift;
+    let root = array4.root;
+    let $ = 0 <= index3 && index3 < node_size(root);
+    if ($) {
+      return new Ok(get_from_node(root, shift, index3));
+    } else {
+      return new Error(void 0);
+    }
+  } else {
+    return new Error(void 0);
+  }
+}
+function update_node(shift, node, index3, fun) {
+  if (node instanceof Balanced) {
+    let size = node.size;
+    let children2 = node.children;
+    let node_index = bsr(index3, shift);
+    let index$1 = index3 - bsl(node_index, shift);
+    let new_children = (() => {
+      let _pipe = get1(node_index + 1, children2);
+      let _pipe$1 = ((_capture) => {
+        return update_node(shift - branch_bits, _capture, index$1, fun);
+      })(_pipe);
+      return ((_capture) => {
+        return set1(node_index + 1, children2, _capture);
+      })(_pipe$1);
+    })();
+    return new Balanced(size, new_children);
+  } else if (node instanceof Unbalanced) {
+    let sizes = node.sizes;
+    let children2 = node.children;
+    let start_search_index = bsr(index3, shift);
+    let node_index = find_size(sizes, start_search_index + 1, index3);
+    let index$1 = (() => {
+      if (node_index === 0) {
+        return index3;
+      } else {
+        return index3 - get1(node_index, sizes);
+      }
+    })();
+    let new_children = (() => {
+      let _pipe = get1(node_index + 1, children2);
+      let _pipe$1 = ((_capture) => {
+        return update_node(shift - branch_bits, _capture, index$1, fun);
+      })(_pipe);
+      return ((_capture) => {
+        return set1(node_index + 1, children2, _capture);
+      })(_pipe$1);
+    })();
+    return new Unbalanced(sizes, new_children);
+  } else {
+    let children2 = node.children;
+    let new_children = set1(
+      index3 + 1,
+      children2,
+      fun(get1(index3 + 1, children2))
+    );
+    return new Leaf(new_children);
+  }
+}
+function try_update(array4, index3, fun) {
+  if (array4 instanceof Array2) {
+    let shift = array4.shift;
+    let root = array4.root;
+    let $ = 0 <= index3 && index3 < node_size(root);
+    if ($) {
+      return new Array2(shift, update_node(shift, root, index3, fun));
+    } else {
+      return array4;
+    }
+  } else {
+    return array4;
+  }
+}
+function try_set(array4, index3, item) {
+  return try_update(array4, index3, (_) => {
+    return item;
+  });
+}
+var branch_factor = 32;
+function push_node(nodes, node, shift) {
+  if (nodes.hasLength(0)) {
+    return toList([singleton(node)]);
+  } else {
+    let nodes$1 = nodes.head;
+    let rest$1 = nodes.tail;
+    let $ = length2(nodes$1) < branch_factor;
+    if ($) {
+      return prepend(append4(nodes$1, node), rest$1);
+    } else {
+      let shift$1 = shift + branch_bits;
+      let new_node = balanced(shift$1, nodes$1);
+      return prepend(
+        singleton(node),
+        push_node(rest$1, new_node, shift$1)
+      );
+    }
+  }
+}
+function builder_append(builder, item) {
+  let nodes = builder.nodes;
+  let items = builder.items;
+  let $ = length2(items) === branch_factor;
+  if ($) {
+    let leaf = new Leaf(items);
+    return new Builder(push_node(nodes, leaf, 0), singleton(item));
+  } else {
+    return new Builder(nodes, append4(items, item));
+  }
+}
+function compress_nodes(loop$nodes, loop$shift) {
+  while (true) {
+    let nodes = loop$nodes;
+    let shift = loop$shift;
+    if (nodes.hasLength(0)) {
+      return new Empty2();
+    } else if (nodes.hasLength(1)) {
+      let root = nodes.head;
+      return array(shift, root);
+    } else {
+      let nodes$1 = nodes.head;
+      let rest$1 = nodes.tail;
+      let shift$1 = shift + branch_bits;
+      loop$nodes = push_node(rest$1, balanced(shift$1, nodes$1), shift$1);
+      loop$shift = shift$1;
+    }
+  }
+}
+function builder_to_array(builder) {
+  let nodes = builder.nodes;
+  let items = builder.items;
+  let items_len = length2(items);
+  let $ = items_len === 0 && is_empty(nodes);
+  if ($) {
+    return new Empty2();
+  } else {
+    let nodes$1 = (() => {
+      let $1 = items_len > 0;
+      if ($1) {
+        return push_node(nodes, new Leaf(items), 0);
+      } else {
+        return nodes;
+      }
+    })();
+    return compress_nodes(nodes$1, 0);
+  }
+}
+function from_list2(list2) {
+  let _pipe = list2;
+  let _pipe$1 = fold(_pipe, builder_new(), builder_append);
+  return builder_to_array(_pipe$1);
+}
+function initialise_loop(loop$idx, loop$length, loop$builder, loop$fun) {
+  while (true) {
+    let idx = loop$idx;
+    let length4 = loop$length;
+    let builder = loop$builder;
+    let fun = loop$fun;
+    let $ = idx < length4;
+    if ($) {
+      loop$idx = idx + 1;
+      loop$length = length4;
+      loop$builder = builder_append(builder, fun(idx));
+      loop$fun = fun;
+    } else {
+      return builder_to_array(builder);
+    }
+  }
+}
+function initialise(length4, fun) {
+  return initialise_loop(0, length4, builder_new(), fun);
+}
+function repeat2(item, times) {
+  return initialise(times, (_) => {
+    return item;
+  });
+}
+function range(start3, stop) {
+  let $ = start3 <= stop;
+  if ($) {
+    return initialise(stop - start3 + 1, (x) => {
+      return x + start3;
+    });
+  } else {
+    return initialise(start3 - stop + 1, (x) => {
+      return start3 - x;
+    });
+  }
+}
+function filter(array4, predicate) {
+  return builder_to_array(
+    fold5(
+      array4,
+      builder_new(),
+      (builder, item) => {
+        let $ = predicate(item);
+        if ($) {
+          return builder_append(builder, item);
+        } else {
+          return builder;
+        }
+      }
+    )
+  );
+}
+function direct_append_balanced(left_shift, left, left_children, right_shift, right) {
+  let left_len = length2(left_children);
+  let left_last = get1(left_len, left_children);
+  let $ = direct_concat_node(
+    left_shift - branch_bits,
+    left_last,
+    right_shift,
+    right
+  );
+  if ($ instanceof Concatenated) {
+    let updated = $.merged;
+    let children2 = set1(left_len, left_children, updated);
+    return new Concatenated(balanced(left_shift, children2));
+  } else if ($ instanceof NoFreeSlot && left_len < 32) {
+    let node = $.right;
+    let children2 = append4(left_children, node);
+    let $1 = node_size(left_last) === bsl(1, left_shift);
+    if ($1) {
+      return new Concatenated(balanced(left_shift, children2));
+    } else {
+      return new Concatenated(unbalanced(left_shift, children2));
+    }
+  } else {
+    let node = $.right;
+    return new NoFreeSlot(left, balanced(left_shift, singleton(node)));
+  }
+}
+function direct_concat_node(left_shift, left, right_shift, right) {
+  if (left instanceof Balanced && right instanceof Leaf) {
+    let cl = left.children;
+    return direct_append_balanced(left_shift, left, cl, right_shift, right);
+  } else if (left instanceof Unbalanced && right instanceof Leaf) {
+    let sizes = left.sizes;
+    let cl = left.children;
+    return direct_append_unbalanced(
+      left_shift,
+      left,
+      cl,
+      sizes,
+      right_shift,
+      right
+    );
+  } else if (left instanceof Leaf && right instanceof Balanced) {
+    let cr = right.children;
+    return direct_prepend_balanced(left_shift, left, right_shift, right, cr);
+  } else if (left instanceof Leaf && right instanceof Unbalanced) {
+    let sr = right.sizes;
+    let cr = right.children;
+    return direct_prepend_unbalanced(
+      left_shift,
+      left,
+      right_shift,
+      right,
+      cr,
+      sr
+    );
+  } else if (left instanceof Leaf && right instanceof Leaf) {
+    let cl = left.children;
+    let cr = right.children;
+    let $ = length2(cl) + length2(cr) <= branch_factor;
+    if ($) {
+      return new Concatenated(new Leaf(concat2(cl, cr)));
+    } else {
+      return new NoFreeSlot(left, right);
+    }
+  } else if (left instanceof Balanced && left_shift > right_shift) {
+    let cl = left.children;
+    return direct_append_balanced(left_shift, left, cl, right_shift, right);
+  } else if (left instanceof Unbalanced && left_shift > right_shift) {
+    let sizes = left.sizes;
+    let cl = left.children;
+    return direct_append_unbalanced(
+      left_shift,
+      left,
+      cl,
+      sizes,
+      right_shift,
+      right
+    );
+  } else if (right instanceof Balanced && right_shift > left_shift) {
+    let cr = right.children;
+    return direct_prepend_balanced(left_shift, left, right_shift, right, cr);
+  } else if (right instanceof Unbalanced && right_shift > left_shift) {
+    let sr = right.sizes;
+    let cr = right.children;
+    return direct_prepend_unbalanced(
+      left_shift,
+      left,
+      right_shift,
+      right,
+      cr,
+      sr
+    );
+  } else if (left instanceof Balanced && right instanceof Balanced) {
+    let cl = left.children;
+    let cr = right.children;
+    let $ = length2(cl) + length2(cr) <= branch_factor;
+    if ($) {
+      let merged = concat2(cl, cr);
+      let left_last = get1(length2(cl), cl);
+      let $1 = node_size(left_last) === bsl(1, left_shift);
+      if ($1) {
+        return new Concatenated(balanced(left_shift, merged));
+      } else {
+        return new Concatenated(unbalanced(left_shift, merged));
+      }
+    } else {
+      return new NoFreeSlot(left, right);
+    }
+  } else if (left instanceof Balanced && right instanceof Unbalanced) {
+    let cl = left.children;
+    let cr = right.children;
+    let $ = length2(cl) + length2(cr) <= branch_factor;
+    if ($) {
+      let merged = concat2(cl, cr);
+      return new Concatenated(unbalanced(left_shift, merged));
+    } else {
+      return new NoFreeSlot(left, right);
+    }
+  } else if (left instanceof Unbalanced && right instanceof Balanced) {
+    let cl = left.children;
+    let cr = right.children;
+    let $ = length2(cl) + length2(cr) <= branch_factor;
+    if ($) {
+      let merged = concat2(cl, cr);
+      return new Concatenated(unbalanced(left_shift, merged));
+    } else {
+      return new NoFreeSlot(left, right);
+    }
+  } else {
+    let cl = left.children;
+    let cr = right.children;
+    let $ = length2(cl) + length2(cr) <= branch_factor;
+    if ($) {
+      let merged = concat2(cl, cr);
+      return new Concatenated(unbalanced(left_shift, merged));
+    } else {
+      return new NoFreeSlot(left, right);
+    }
+  }
+}
+function direct_concat(left, right) {
+  if (left instanceof Empty2) {
+    return right;
+  } else if (right instanceof Empty2) {
+    return left;
+  } else {
+    let left_shift = left.shift;
+    let left$1 = left.root;
+    let right_shift = right.shift;
+    let right$1 = right.root;
+    let shift = (() => {
+      let $2 = left_shift > right_shift;
+      if ($2) {
+        return left_shift;
+      } else {
+        return right_shift;
+      }
+    })();
+    let $ = direct_concat_node(left_shift, left$1, right_shift, right$1);
+    if ($ instanceof Concatenated) {
+      let root = $.merged;
+      return new Array2(shift, root);
+    } else {
+      let left$2 = $.left;
+      let right$2 = $.right;
+      return array(shift, pair(left$2, right$2));
+    }
+  }
+}
+function prepend4(array4, item) {
+  return direct_concat(wrap(item), array4);
+}
+function direct_append_unbalanced(left_shift, left, left_children, sizes, right_shift, right) {
+  let left_len = length2(left_children);
+  let left_last = get1(left_len, left_children);
+  let $ = direct_concat_node(
+    left_shift - branch_bits,
+    left_last,
+    right_shift,
+    right
+  );
+  if ($ instanceof Concatenated) {
+    let updated = $.merged;
+    let children2 = set1(left_len, left_children, updated);
+    let last_size = get1(left_len, sizes) + node_size(updated);
+    let sizes$1 = set1(left_len, sizes, last_size);
+    return new Concatenated(new Unbalanced(sizes$1, children2));
+  } else if ($ instanceof NoFreeSlot && left_len < 32) {
+    let node = $.right;
+    let children2 = append4(left_children, node);
+    let sizes$1 = append4(
+      sizes,
+      get1(left_len, sizes) + node_size(node)
+    );
+    return new Concatenated(new Unbalanced(sizes$1, children2));
+  } else {
+    let node = $.right;
+    return new NoFreeSlot(left, balanced(left_shift, singleton(node)));
+  }
+}
+function direct_prepend_balanced(left_shift, left, right_shift, right, right_children) {
+  let right_len = length2(right_children);
+  let right_first = get1(1, right_children);
+  let $ = direct_concat_node(
+    left_shift,
+    left,
+    right_shift - branch_bits,
+    right_first
+  );
+  if ($ instanceof Concatenated) {
+    let updated = $.merged;
+    let children2 = set1(1, right_children, updated);
+    return new Concatenated(unbalanced(right_shift, children2));
+  } else if ($ instanceof NoFreeSlot && right_len < 32) {
+    let node = $.left;
+    let children2 = prepend3(right_children, node);
+    return new Concatenated(unbalanced(right_shift, children2));
+  } else {
+    let node = $.left;
+    return new NoFreeSlot(balanced(right_shift, singleton(node)), right);
+  }
+}
+function direct_prepend_unbalanced(left_shift, left, right_shift, right, right_children, sizes) {
+  let right_len = length2(right_children);
+  let right_first = get1(1, right_children);
+  let $ = direct_concat_node(
+    left_shift,
+    left,
+    right_shift - branch_bits,
+    right_first
+  );
+  if ($ instanceof Concatenated) {
+    let updated = $.merged;
+    let children2 = set1(1, right_children, updated);
+    let size_delta = node_size(updated) - node_size(right_first);
+    let sizes$1 = map3(sizes, (s) => {
+      return s + size_delta;
+    });
+    return new Concatenated(new Unbalanced(sizes$1, children2));
+  } else if ($ instanceof NoFreeSlot && right_len < 32) {
+    let node = $.left;
+    let children2 = prepend3(right_children, node);
+    let size = node_size(node);
+    let sizes$1 = (() => {
+      let _pipe = sizes;
+      let _pipe$1 = map3(_pipe, (s) => {
+        return s + size;
+      });
+      return prepend3(_pipe$1, size);
+    })();
+    return new Concatenated(new Unbalanced(sizes$1, children2));
+  } else {
+    let node = $.left;
+    return new NoFreeSlot(balanced(right_shift, singleton(node)), right);
+  }
+}
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
 function guard(requirement, consequence, alternative) {
@@ -1658,9 +2546,9 @@ function guard(requirement, consequence, alternative) {
 
 // build/dev/javascript/lustre/lustre/effect.mjs
 var Effect = class extends CustomType {
-  constructor(all) {
+  constructor(all2) {
     super();
-    this.all = all;
+    this.all = all2;
   }
 };
 function custom(run2) {
@@ -2579,59 +3467,6 @@ function on_keyup(msg) {
   );
 }
 
-// build/dev/javascript/gleamness/emulation/helpers/list_helpers.mjs
-function get_list_value_by_index(loop$list, loop$index) {
-  while (true) {
-    let list2 = loop$list;
-    let index3 = loop$index;
-    if (list2.hasLength(0)) {
-      return new Error(void 0);
-    } else if (list2.atLeastLength(1) && index3 === 0) {
-      let first2 = list2.head;
-      return new Ok(first2);
-    } else if (list2.atLeastLength(1) && index3 > 0) {
-      let rest = list2.tail;
-      let i = index3;
-      loop$list = rest;
-      loop$index = i - 1;
-    } else {
-      return new Error(void 0);
-    }
-  }
-}
-function set_list_value_by_index_tail(loop$list, loop$index, loop$value, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let index3 = loop$index;
-    let value = loop$value;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return new Error(void 0);
-    } else if (list2.atLeastLength(1) && index3 === 0) {
-      let rest = list2.tail;
-      return new Ok(
-        append(append(reverse(acc), toList([value])), rest)
-      );
-    } else {
-      let head = list2.head;
-      let rest = list2.tail;
-      let i = index3;
-      loop$list = rest;
-      loop$index = i - 1;
-      loop$value = value;
-      loop$acc = prepend(head, acc);
-    }
-  }
-}
-function set_list_value_by_index(list2, index3, value) {
-  let $ = index3 < 0;
-  if ($) {
-    return new Error(void 0);
-  } else {
-    return set_list_value_by_index_tail(list2, index3, value, toList([]));
-  }
-}
-
 // build/dev/javascript/gleamness/emulation/types.mjs
 var CPU = class extends CustomType {
   constructor(register_a, register_x, register_y, status, program_counter, stack_pointer, memory, bus) {
@@ -2703,7 +3538,8 @@ function mem_read(bus, addr) {
   if (addr >= 0 && addr <= 8191) {
     let addr$1 = addr;
     let mirror_down_addr = bitwise_and(addr$1, 2047);
-    return get_list_value_by_index(bus.cpu_vram, mirror_down_addr);
+    let _pipe = get(bus.cpu_vram, mirror_down_addr);
+    return replace_error(_pipe, void 0);
   } else if (addr >= 8192 && addr <= 16383) {
     let addr$1 = addr;
     let $ = bitwise_and(addr$1, 8199);
@@ -2716,17 +3552,8 @@ function mem_write(bus, addr, data) {
   if (addr >= 0 && addr <= 8191) {
     let addr$1 = addr;
     let mirror_down_addr = bitwise_and(addr$1, 2047);
-    let $ = set_list_value_by_index(
-      bus.cpu_vram,
-      mirror_down_addr,
-      data
-    );
-    if ($.isOk()) {
-      let new_vram = $[0];
-      return new Ok(new Bus(new_vram));
-    } else {
-      return new Error(void 0);
-    }
+    let new_vram = try_set(bus.cpu_vram, mirror_down_addr, data);
+    return new Ok(new Bus(new_vram));
   } else if (addr >= 8192 && addr <= 16383) {
     let addr$1 = addr;
     let $ = bitwise_and(addr$1, 8199);
@@ -2763,31 +3590,16 @@ function mem_write_u16(bus, addr, data) {
 }
 
 // build/dev/javascript/gleamness/emulation/memory.mjs
-function init_memory_with_size_tail(loop$remaining, loop$acc) {
-  while (true) {
-    let remaining = loop$remaining;
-    let acc = loop$acc;
-    if (remaining === 0) {
-      return acc;
-    } else {
-      let n = remaining;
-      loop$remaining = n - 1;
-      loop$acc = prepend(0, acc);
-    }
-  }
-}
-function init_memory_with_size(size) {
-  return init_memory_with_size_tail(size, toList([]));
-}
 function init_memory() {
-  return init_memory_with_size(65535);
+  return repeat2(0, 65535);
 }
 function read(cpu, address) {
   let $ = address < 8192;
   if ($) {
     return mem_read(cpu.bus, address);
   } else {
-    return get_list_value_by_index(cpu.memory, address);
+    let _pipe = get(cpu.memory, address);
+    return replace_error(_pipe, void 0);
   }
 }
 function write(cpu, address, data) {
@@ -2815,27 +3627,22 @@ function write(cpu, address, data) {
       return new Error(void 0);
     }
   } else {
-    let $1 = set_list_value_by_index(cpu.memory, address, data);
-    if ($1.isOk()) {
-      let new_memory = $1[0];
-      return new Ok(
-        (() => {
-          let _record = cpu;
-          return new CPU(
-            _record.register_a,
-            _record.register_x,
-            _record.register_y,
-            _record.status,
-            _record.program_counter,
-            _record.stack_pointer,
-            new_memory,
-            _record.bus
-          );
-        })()
-      );
-    } else {
-      return new Error(void 0);
-    }
+    let new_memory = try_set(cpu.memory, address, data);
+    return new Ok(
+      (() => {
+        let _record = cpu;
+        return new CPU(
+          _record.register_a,
+          _record.register_x,
+          _record.register_y,
+          _record.status,
+          _record.program_counter,
+          _record.stack_pointer,
+          new_memory,
+          _record.bus
+        );
+      })()
+    );
   }
 }
 function read_u16(cpu, address) {
@@ -2897,26 +3704,27 @@ function write_u16(cpu, address, data) {
 
 // build/dev/javascript/gleamness/emulation/addressing.mjs
 function fetch_byte(cpu, program) {
-  let $ = get_list_value_by_index(program, cpu.program_counter);
-  if ($.isOk()) {
-    let byte = $[0];
-    let new_cpu = (() => {
-      let _record = cpu;
-      return new CPU(
-        _record.register_a,
-        _record.register_x,
-        _record.register_y,
-        _record.status,
-        cpu.program_counter + 1,
-        _record.stack_pointer,
-        _record.memory,
-        _record.bus
-      );
-    })();
-    return [new_cpu, byte];
-  } else {
-    return [cpu, 0];
-  }
+  let _pipe = get(program, cpu.program_counter);
+  let _pipe$1 = map2(
+    _pipe,
+    (byte) => {
+      let new_cpu = (() => {
+        let _record = cpu;
+        return new CPU(
+          _record.register_a,
+          _record.register_x,
+          _record.register_y,
+          _record.status,
+          cpu.program_counter + 1,
+          _record.stack_pointer,
+          _record.memory,
+          _record.bus
+        );
+      })();
+      return [new_cpu, byte];
+    }
+  );
+  return unwrap(_pipe$1, [cpu, 0]);
 }
 function fetch_word(cpu, program) {
   let $ = fetch_byte(cpu, program);
@@ -3088,13 +3896,8 @@ function get_operand_address(cpu, program, mode) {
 }
 function get_operand_value(cpu, program, mode, operand_addr) {
   if (mode instanceof Immediate) {
-    let $ = get_list_value_by_index(program, operand_addr);
-    if ($.isOk()) {
-      let value = $[0];
-      return value;
-    } else {
-      return 0;
-    }
+    let _pipe = get(program, operand_addr);
+    return unwrap(_pipe, 0);
   } else if (mode instanceof Accumulator) {
     return cpu.register_a;
   } else if (mode instanceof NoneAddressing) {
@@ -3112,166 +3915,168 @@ function get_operand_value(cpu, program, mode, operand_addr) {
 
 // build/dev/javascript/gleamness/emulation/helpers/instruction_helpers.mjs
 function get_all_instructions() {
-  return toList([
-    new CpuInstruction(105, "ADC", 2, 2, new Immediate()),
-    new CpuInstruction(101, "ADC", 2, 3, new ZeroPage()),
-    new CpuInstruction(117, "ADC", 2, 4, new ZeroPageX()),
-    new CpuInstruction(109, "ADC", 3, 4, new Absolute()),
-    new CpuInstruction(125, "ADC", 3, 4, new AbsoluteX()),
-    new CpuInstruction(121, "ADC", 3, 4, new AbsoluteY()),
-    new CpuInstruction(97, "ADC", 2, 6, new IndirectX()),
-    new CpuInstruction(113, "ADC", 2, 5, new IndirectY()),
-    new CpuInstruction(41, "AND", 2, 2, new Immediate()),
-    new CpuInstruction(37, "AND", 2, 3, new ZeroPage()),
-    new CpuInstruction(53, "AND", 2, 4, new ZeroPageX()),
-    new CpuInstruction(45, "AND", 3, 4, new Absolute()),
-    new CpuInstruction(61, "AND", 3, 4, new AbsoluteX()),
-    new CpuInstruction(57, "AND", 3, 4, new AbsoluteY()),
-    new CpuInstruction(33, "AND", 2, 6, new IndirectX()),
-    new CpuInstruction(49, "AND", 2, 5, new IndirectY()),
-    new CpuInstruction(10, "ASL", 1, 2, new Accumulator()),
-    new CpuInstruction(6, "ASL", 2, 5, new ZeroPage()),
-    new CpuInstruction(22, "ASL", 2, 6, new ZeroPageX()),
-    new CpuInstruction(14, "ASL", 3, 6, new Absolute()),
-    new CpuInstruction(30, "ASL", 3, 7, new AbsoluteX()),
-    new CpuInstruction(144, "BCC", 2, 2, new Relative()),
-    new CpuInstruction(176, "BCS", 2, 2, new Relative()),
-    new CpuInstruction(240, "BEQ", 2, 2, new Relative()),
-    new CpuInstruction(36, "BIT", 2, 3, new ZeroPage()),
-    new CpuInstruction(44, "BIT", 3, 4, new Absolute()),
-    new CpuInstruction(48, "BMI", 2, 2, new Relative()),
-    new CpuInstruction(208, "BNE", 2, 2, new Relative()),
-    new CpuInstruction(16, "BPL", 2, 2, new Relative()),
-    new CpuInstruction(0, "BRK", 1, 7, new NoneAddressing()),
-    new CpuInstruction(80, "BVC", 2, 2, new Relative()),
-    new CpuInstruction(112, "BVS", 2, 2, new Relative()),
-    new CpuInstruction(24, "CLC", 1, 2, new NoneAddressing()),
-    new CpuInstruction(216, "CLD", 1, 2, new NoneAddressing()),
-    new CpuInstruction(88, "CLI", 1, 2, new NoneAddressing()),
-    new CpuInstruction(184, "CLV", 1, 2, new NoneAddressing()),
-    new CpuInstruction(201, "CMP", 2, 2, new Immediate()),
-    new CpuInstruction(197, "CMP", 2, 3, new ZeroPage()),
-    new CpuInstruction(213, "CMP", 2, 4, new ZeroPageX()),
-    new CpuInstruction(205, "CMP", 3, 4, new Absolute()),
-    new CpuInstruction(221, "CMP", 3, 4, new AbsoluteX()),
-    new CpuInstruction(217, "CMP", 3, 4, new AbsoluteY()),
-    new CpuInstruction(193, "CMP", 2, 6, new IndirectX()),
-    new CpuInstruction(209, "CMP", 2, 5, new IndirectY()),
-    new CpuInstruction(224, "CPX", 2, 2, new Immediate()),
-    new CpuInstruction(228, "CPX", 2, 3, new ZeroPage()),
-    new CpuInstruction(236, "CPX", 3, 4, new Absolute()),
-    new CpuInstruction(192, "CPY", 2, 2, new Immediate()),
-    new CpuInstruction(196, "CPY", 2, 3, new ZeroPage()),
-    new CpuInstruction(204, "CPY", 3, 4, new Absolute()),
-    new CpuInstruction(198, "DEC", 2, 5, new ZeroPage()),
-    new CpuInstruction(214, "DEC", 2, 6, new ZeroPageX()),
-    new CpuInstruction(206, "DEC", 3, 6, new Absolute()),
-    new CpuInstruction(222, "DEC", 3, 7, new AbsoluteX()),
-    new CpuInstruction(202, "DEX", 1, 2, new NoneAddressing()),
-    new CpuInstruction(136, "DEY", 1, 2, new NoneAddressing()),
-    new CpuInstruction(73, "EOR", 2, 2, new Immediate()),
-    new CpuInstruction(69, "EOR", 2, 3, new ZeroPage()),
-    new CpuInstruction(85, "EOR", 2, 4, new ZeroPageX()),
-    new CpuInstruction(77, "EOR", 3, 4, new Absolute()),
-    new CpuInstruction(93, "EOR", 3, 4, new AbsoluteX()),
-    new CpuInstruction(89, "EOR", 3, 4, new AbsoluteY()),
-    new CpuInstruction(65, "EOR", 2, 6, new IndirectX()),
-    new CpuInstruction(81, "EOR", 2, 5, new IndirectY()),
-    new CpuInstruction(230, "INC", 2, 5, new ZeroPage()),
-    new CpuInstruction(246, "INC", 2, 6, new ZeroPageX()),
-    new CpuInstruction(238, "INC", 3, 6, new Absolute()),
-    new CpuInstruction(254, "INC", 3, 7, new AbsoluteX()),
-    new CpuInstruction(232, "INX", 1, 2, new NoneAddressing()),
-    new CpuInstruction(200, "INY", 1, 2, new NoneAddressing()),
-    new CpuInstruction(76, "JMP", 3, 3, new Absolute()),
-    new CpuInstruction(108, "JMP", 3, 5, new Indirect()),
-    new CpuInstruction(32, "JSR", 3, 6, new Absolute()),
-    new CpuInstruction(169, "LDA", 2, 2, new Immediate()),
-    new CpuInstruction(165, "LDA", 2, 3, new ZeroPage()),
-    new CpuInstruction(181, "LDA", 2, 4, new ZeroPageX()),
-    new CpuInstruction(173, "LDA", 3, 4, new Absolute()),
-    new CpuInstruction(189, "LDA", 3, 4, new AbsoluteX()),
-    new CpuInstruction(185, "LDA", 3, 4, new AbsoluteY()),
-    new CpuInstruction(161, "LDA", 2, 6, new IndirectX()),
-    new CpuInstruction(177, "LDA", 2, 5, new IndirectY()),
-    new CpuInstruction(162, "LDX", 2, 2, new Immediate()),
-    new CpuInstruction(166, "LDX", 2, 3, new ZeroPage()),
-    new CpuInstruction(182, "LDX", 2, 4, new ZeroPageY()),
-    new CpuInstruction(174, "LDX", 3, 4, new Absolute()),
-    new CpuInstruction(190, "LDX", 3, 4, new AbsoluteY()),
-    new CpuInstruction(160, "LDY", 2, 2, new Immediate()),
-    new CpuInstruction(164, "LDY", 2, 3, new ZeroPage()),
-    new CpuInstruction(180, "LDY", 2, 4, new ZeroPageX()),
-    new CpuInstruction(172, "LDY", 3, 4, new Absolute()),
-    new CpuInstruction(188, "LDY", 3, 4, new AbsoluteX()),
-    new CpuInstruction(74, "LSR", 1, 2, new Accumulator()),
-    new CpuInstruction(70, "LSR", 2, 5, new ZeroPage()),
-    new CpuInstruction(86, "LSR", 2, 6, new ZeroPageX()),
-    new CpuInstruction(78, "LSR", 3, 6, new Absolute()),
-    new CpuInstruction(94, "LSR", 3, 7, new AbsoluteX()),
-    new CpuInstruction(234, "NOP", 1, 2, new NoneAddressing()),
-    new CpuInstruction(9, "ORA", 2, 2, new Immediate()),
-    new CpuInstruction(5, "ORA", 2, 3, new ZeroPage()),
-    new CpuInstruction(21, "ORA", 2, 4, new ZeroPageX()),
-    new CpuInstruction(13, "ORA", 3, 4, new Absolute()),
-    new CpuInstruction(29, "ORA", 3, 4, new AbsoluteX()),
-    new CpuInstruction(25, "ORA", 3, 4, new AbsoluteY()),
-    new CpuInstruction(1, "ORA", 2, 6, new IndirectX()),
-    new CpuInstruction(17, "ORA", 2, 5, new IndirectY()),
-    new CpuInstruction(72, "PHA", 1, 3, new NoneAddressing()),
-    new CpuInstruction(8, "PHP", 1, 3, new NoneAddressing()),
-    new CpuInstruction(104, "PLA", 1, 4, new NoneAddressing()),
-    new CpuInstruction(40, "PLP", 1, 4, new NoneAddressing()),
-    new CpuInstruction(42, "ROL", 1, 2, new Accumulator()),
-    new CpuInstruction(38, "ROL", 2, 5, new ZeroPage()),
-    new CpuInstruction(54, "ROL", 2, 6, new ZeroPageX()),
-    new CpuInstruction(46, "ROL", 3, 6, new Absolute()),
-    new CpuInstruction(62, "ROL", 3, 7, new AbsoluteX()),
-    new CpuInstruction(106, "ROR", 1, 2, new Accumulator()),
-    new CpuInstruction(102, "ROR", 2, 5, new ZeroPage()),
-    new CpuInstruction(118, "ROR", 2, 6, new ZeroPageX()),
-    new CpuInstruction(110, "ROR", 3, 6, new Absolute()),
-    new CpuInstruction(126, "ROR", 3, 7, new AbsoluteX()),
-    new CpuInstruction(64, "RTI", 1, 6, new NoneAddressing()),
-    new CpuInstruction(96, "RTS", 1, 6, new NoneAddressing()),
-    new CpuInstruction(233, "SBC", 2, 2, new Immediate()),
-    new CpuInstruction(229, "SBC", 2, 3, new ZeroPage()),
-    new CpuInstruction(245, "SBC", 2, 4, new ZeroPageX()),
-    new CpuInstruction(237, "SBC", 3, 4, new Absolute()),
-    new CpuInstruction(253, "SBC", 3, 4, new AbsoluteX()),
-    new CpuInstruction(249, "SBC", 3, 4, new AbsoluteY()),
-    new CpuInstruction(225, "SBC", 2, 6, new IndirectX()),
-    new CpuInstruction(241, "SBC", 2, 5, new IndirectY()),
-    new CpuInstruction(56, "SEC", 1, 2, new NoneAddressing()),
-    new CpuInstruction(248, "SED", 1, 2, new NoneAddressing()),
-    new CpuInstruction(120, "SEI", 1, 2, new NoneAddressing()),
-    new CpuInstruction(133, "STA", 2, 3, new ZeroPage()),
-    new CpuInstruction(149, "STA", 2, 4, new ZeroPageX()),
-    new CpuInstruction(141, "STA", 3, 4, new Absolute()),
-    new CpuInstruction(157, "STA", 3, 5, new AbsoluteX()),
-    new CpuInstruction(153, "STA", 3, 5, new AbsoluteY()),
-    new CpuInstruction(129, "STA", 2, 6, new IndirectX()),
-    new CpuInstruction(145, "STA", 2, 6, new IndirectY()),
-    new CpuInstruction(134, "STX", 2, 3, new ZeroPage()),
-    new CpuInstruction(150, "STX", 2, 4, new ZeroPageY()),
-    new CpuInstruction(142, "STX", 3, 4, new Absolute()),
-    new CpuInstruction(132, "STY", 2, 3, new ZeroPage()),
-    new CpuInstruction(148, "STY", 2, 4, new ZeroPageX()),
-    new CpuInstruction(140, "STY", 3, 4, new Absolute()),
-    new CpuInstruction(170, "TAX", 1, 2, new NoneAddressing()),
-    new CpuInstruction(168, "TAY", 1, 2, new NoneAddressing()),
-    new CpuInstruction(186, "TSX", 1, 2, new NoneAddressing()),
-    new CpuInstruction(138, "TXA", 1, 2, new NoneAddressing()),
-    new CpuInstruction(154, "TXS", 1, 2, new NoneAddressing()),
-    new CpuInstruction(152, "TYA", 1, 2, new NoneAddressing())
-  ]);
+  return from_list2(
+    toList([
+      new CpuInstruction(105, "ADC", 2, 2, new Immediate()),
+      new CpuInstruction(101, "ADC", 2, 3, new ZeroPage()),
+      new CpuInstruction(117, "ADC", 2, 4, new ZeroPageX()),
+      new CpuInstruction(109, "ADC", 3, 4, new Absolute()),
+      new CpuInstruction(125, "ADC", 3, 4, new AbsoluteX()),
+      new CpuInstruction(121, "ADC", 3, 4, new AbsoluteY()),
+      new CpuInstruction(97, "ADC", 2, 6, new IndirectX()),
+      new CpuInstruction(113, "ADC", 2, 5, new IndirectY()),
+      new CpuInstruction(41, "AND", 2, 2, new Immediate()),
+      new CpuInstruction(37, "AND", 2, 3, new ZeroPage()),
+      new CpuInstruction(53, "AND", 2, 4, new ZeroPageX()),
+      new CpuInstruction(45, "AND", 3, 4, new Absolute()),
+      new CpuInstruction(61, "AND", 3, 4, new AbsoluteX()),
+      new CpuInstruction(57, "AND", 3, 4, new AbsoluteY()),
+      new CpuInstruction(33, "AND", 2, 6, new IndirectX()),
+      new CpuInstruction(49, "AND", 2, 5, new IndirectY()),
+      new CpuInstruction(10, "ASL", 1, 2, new Accumulator()),
+      new CpuInstruction(6, "ASL", 2, 5, new ZeroPage()),
+      new CpuInstruction(22, "ASL", 2, 6, new ZeroPageX()),
+      new CpuInstruction(14, "ASL", 3, 6, new Absolute()),
+      new CpuInstruction(30, "ASL", 3, 7, new AbsoluteX()),
+      new CpuInstruction(144, "BCC", 2, 2, new Relative()),
+      new CpuInstruction(176, "BCS", 2, 2, new Relative()),
+      new CpuInstruction(240, "BEQ", 2, 2, new Relative()),
+      new CpuInstruction(36, "BIT", 2, 3, new ZeroPage()),
+      new CpuInstruction(44, "BIT", 3, 4, new Absolute()),
+      new CpuInstruction(48, "BMI", 2, 2, new Relative()),
+      new CpuInstruction(208, "BNE", 2, 2, new Relative()),
+      new CpuInstruction(16, "BPL", 2, 2, new Relative()),
+      new CpuInstruction(0, "BRK", 1, 7, new NoneAddressing()),
+      new CpuInstruction(80, "BVC", 2, 2, new Relative()),
+      new CpuInstruction(112, "BVS", 2, 2, new Relative()),
+      new CpuInstruction(24, "CLC", 1, 2, new NoneAddressing()),
+      new CpuInstruction(216, "CLD", 1, 2, new NoneAddressing()),
+      new CpuInstruction(88, "CLI", 1, 2, new NoneAddressing()),
+      new CpuInstruction(184, "CLV", 1, 2, new NoneAddressing()),
+      new CpuInstruction(201, "CMP", 2, 2, new Immediate()),
+      new CpuInstruction(197, "CMP", 2, 3, new ZeroPage()),
+      new CpuInstruction(213, "CMP", 2, 4, new ZeroPageX()),
+      new CpuInstruction(205, "CMP", 3, 4, new Absolute()),
+      new CpuInstruction(221, "CMP", 3, 4, new AbsoluteX()),
+      new CpuInstruction(217, "CMP", 3, 4, new AbsoluteY()),
+      new CpuInstruction(193, "CMP", 2, 6, new IndirectX()),
+      new CpuInstruction(209, "CMP", 2, 5, new IndirectY()),
+      new CpuInstruction(224, "CPX", 2, 2, new Immediate()),
+      new CpuInstruction(228, "CPX", 2, 3, new ZeroPage()),
+      new CpuInstruction(236, "CPX", 3, 4, new Absolute()),
+      new CpuInstruction(192, "CPY", 2, 2, new Immediate()),
+      new CpuInstruction(196, "CPY", 2, 3, new ZeroPage()),
+      new CpuInstruction(204, "CPY", 3, 4, new Absolute()),
+      new CpuInstruction(198, "DEC", 2, 5, new ZeroPage()),
+      new CpuInstruction(214, "DEC", 2, 6, new ZeroPageX()),
+      new CpuInstruction(206, "DEC", 3, 6, new Absolute()),
+      new CpuInstruction(222, "DEC", 3, 7, new AbsoluteX()),
+      new CpuInstruction(202, "DEX", 1, 2, new NoneAddressing()),
+      new CpuInstruction(136, "DEY", 1, 2, new NoneAddressing()),
+      new CpuInstruction(73, "EOR", 2, 2, new Immediate()),
+      new CpuInstruction(69, "EOR", 2, 3, new ZeroPage()),
+      new CpuInstruction(85, "EOR", 2, 4, new ZeroPageX()),
+      new CpuInstruction(77, "EOR", 3, 4, new Absolute()),
+      new CpuInstruction(93, "EOR", 3, 4, new AbsoluteX()),
+      new CpuInstruction(89, "EOR", 3, 4, new AbsoluteY()),
+      new CpuInstruction(65, "EOR", 2, 6, new IndirectX()),
+      new CpuInstruction(81, "EOR", 2, 5, new IndirectY()),
+      new CpuInstruction(230, "INC", 2, 5, new ZeroPage()),
+      new CpuInstruction(246, "INC", 2, 6, new ZeroPageX()),
+      new CpuInstruction(238, "INC", 3, 6, new Absolute()),
+      new CpuInstruction(254, "INC", 3, 7, new AbsoluteX()),
+      new CpuInstruction(232, "INX", 1, 2, new NoneAddressing()),
+      new CpuInstruction(200, "INY", 1, 2, new NoneAddressing()),
+      new CpuInstruction(76, "JMP", 3, 3, new Absolute()),
+      new CpuInstruction(108, "JMP", 3, 5, new Indirect()),
+      new CpuInstruction(32, "JSR", 3, 6, new Absolute()),
+      new CpuInstruction(169, "LDA", 2, 2, new Immediate()),
+      new CpuInstruction(165, "LDA", 2, 3, new ZeroPage()),
+      new CpuInstruction(181, "LDA", 2, 4, new ZeroPageX()),
+      new CpuInstruction(173, "LDA", 3, 4, new Absolute()),
+      new CpuInstruction(189, "LDA", 3, 4, new AbsoluteX()),
+      new CpuInstruction(185, "LDA", 3, 4, new AbsoluteY()),
+      new CpuInstruction(161, "LDA", 2, 6, new IndirectX()),
+      new CpuInstruction(177, "LDA", 2, 5, new IndirectY()),
+      new CpuInstruction(162, "LDX", 2, 2, new Immediate()),
+      new CpuInstruction(166, "LDX", 2, 3, new ZeroPage()),
+      new CpuInstruction(182, "LDX", 2, 4, new ZeroPageY()),
+      new CpuInstruction(174, "LDX", 3, 4, new Absolute()),
+      new CpuInstruction(190, "LDX", 3, 4, new AbsoluteY()),
+      new CpuInstruction(160, "LDY", 2, 2, new Immediate()),
+      new CpuInstruction(164, "LDY", 2, 3, new ZeroPage()),
+      new CpuInstruction(180, "LDY", 2, 4, new ZeroPageX()),
+      new CpuInstruction(172, "LDY", 3, 4, new Absolute()),
+      new CpuInstruction(188, "LDY", 3, 4, new AbsoluteX()),
+      new CpuInstruction(74, "LSR", 1, 2, new Accumulator()),
+      new CpuInstruction(70, "LSR", 2, 5, new ZeroPage()),
+      new CpuInstruction(86, "LSR", 2, 6, new ZeroPageX()),
+      new CpuInstruction(78, "LSR", 3, 6, new Absolute()),
+      new CpuInstruction(94, "LSR", 3, 7, new AbsoluteX()),
+      new CpuInstruction(234, "NOP", 1, 2, new NoneAddressing()),
+      new CpuInstruction(9, "ORA", 2, 2, new Immediate()),
+      new CpuInstruction(5, "ORA", 2, 3, new ZeroPage()),
+      new CpuInstruction(21, "ORA", 2, 4, new ZeroPageX()),
+      new CpuInstruction(13, "ORA", 3, 4, new Absolute()),
+      new CpuInstruction(29, "ORA", 3, 4, new AbsoluteX()),
+      new CpuInstruction(25, "ORA", 3, 4, new AbsoluteY()),
+      new CpuInstruction(1, "ORA", 2, 6, new IndirectX()),
+      new CpuInstruction(17, "ORA", 2, 5, new IndirectY()),
+      new CpuInstruction(72, "PHA", 1, 3, new NoneAddressing()),
+      new CpuInstruction(8, "PHP", 1, 3, new NoneAddressing()),
+      new CpuInstruction(104, "PLA", 1, 4, new NoneAddressing()),
+      new CpuInstruction(40, "PLP", 1, 4, new NoneAddressing()),
+      new CpuInstruction(42, "ROL", 1, 2, new Accumulator()),
+      new CpuInstruction(38, "ROL", 2, 5, new ZeroPage()),
+      new CpuInstruction(54, "ROL", 2, 6, new ZeroPageX()),
+      new CpuInstruction(46, "ROL", 3, 6, new Absolute()),
+      new CpuInstruction(62, "ROL", 3, 7, new AbsoluteX()),
+      new CpuInstruction(106, "ROR", 1, 2, new Accumulator()),
+      new CpuInstruction(102, "ROR", 2, 5, new ZeroPage()),
+      new CpuInstruction(118, "ROR", 2, 6, new ZeroPageX()),
+      new CpuInstruction(110, "ROR", 3, 6, new Absolute()),
+      new CpuInstruction(126, "ROR", 3, 7, new AbsoluteX()),
+      new CpuInstruction(64, "RTI", 1, 6, new NoneAddressing()),
+      new CpuInstruction(96, "RTS", 1, 6, new NoneAddressing()),
+      new CpuInstruction(233, "SBC", 2, 2, new Immediate()),
+      new CpuInstruction(229, "SBC", 2, 3, new ZeroPage()),
+      new CpuInstruction(245, "SBC", 2, 4, new ZeroPageX()),
+      new CpuInstruction(237, "SBC", 3, 4, new Absolute()),
+      new CpuInstruction(253, "SBC", 3, 4, new AbsoluteX()),
+      new CpuInstruction(249, "SBC", 3, 4, new AbsoluteY()),
+      new CpuInstruction(225, "SBC", 2, 6, new IndirectX()),
+      new CpuInstruction(241, "SBC", 2, 5, new IndirectY()),
+      new CpuInstruction(56, "SEC", 1, 2, new NoneAddressing()),
+      new CpuInstruction(248, "SED", 1, 2, new NoneAddressing()),
+      new CpuInstruction(120, "SEI", 1, 2, new NoneAddressing()),
+      new CpuInstruction(133, "STA", 2, 3, new ZeroPage()),
+      new CpuInstruction(149, "STA", 2, 4, new ZeroPageX()),
+      new CpuInstruction(141, "STA", 3, 4, new Absolute()),
+      new CpuInstruction(157, "STA", 3, 5, new AbsoluteX()),
+      new CpuInstruction(153, "STA", 3, 5, new AbsoluteY()),
+      new CpuInstruction(129, "STA", 2, 6, new IndirectX()),
+      new CpuInstruction(145, "STA", 2, 6, new IndirectY()),
+      new CpuInstruction(134, "STX", 2, 3, new ZeroPage()),
+      new CpuInstruction(150, "STX", 2, 4, new ZeroPageY()),
+      new CpuInstruction(142, "STX", 3, 4, new Absolute()),
+      new CpuInstruction(132, "STY", 2, 3, new ZeroPage()),
+      new CpuInstruction(148, "STY", 2, 4, new ZeroPageX()),
+      new CpuInstruction(140, "STY", 3, 4, new Absolute()),
+      new CpuInstruction(170, "TAX", 1, 2, new NoneAddressing()),
+      new CpuInstruction(168, "TAY", 1, 2, new NoneAddressing()),
+      new CpuInstruction(186, "TSX", 1, 2, new NoneAddressing()),
+      new CpuInstruction(138, "TXA", 1, 2, new NoneAddressing()),
+      new CpuInstruction(154, "TXS", 1, 2, new NoneAddressing()),
+      new CpuInstruction(152, "TYA", 1, 2, new NoneAddressing())
+    ])
+  );
 }
 
 // build/dev/javascript/gleamness/emulation/flags.mjs
 function update_flags(cpu, result, flags_to_update) {
   let status = cpu.status;
   let status$1 = bitwise_or(status, flag_unused);
-  let status$2 = fold(
+  let status$2 = fold5(
     flags_to_update,
     status$1,
     (status2, flag) => {
@@ -3407,7 +4212,11 @@ function adc(cpu, value) {
     overflow_set,
     carry_set
   );
-  return update_flags(cpu$2, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$2,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function sbc(cpu, value) {
   let inverted_value = bitwise_exclusive_or(value, 255);
@@ -3424,7 +4233,7 @@ function inc(cpu, addr) {
       return update_flags(
         new_cpu,
         new_value,
-        toList([flag_zero, flag_negative])
+        from_list2(toList([flag_zero, flag_negative]))
       );
     } else {
       return cpu;
@@ -3444,7 +4253,7 @@ function dec(cpu, addr) {
       return update_flags(
         new_cpu,
         new_value,
-        toList([flag_zero, flag_negative])
+        from_list2(toList([flag_zero, flag_negative]))
       );
     } else {
       return cpu;
@@ -3468,7 +4277,11 @@ function inx(cpu) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    value,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function iny(cpu) {
   let value = bitwise_and(cpu.register_y + 1, 255);
@@ -3485,7 +4298,11 @@ function iny(cpu) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    value,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function dex(cpu) {
   let value = bitwise_and(cpu.register_x - 1, 255);
@@ -3502,7 +4319,11 @@ function dex(cpu) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    value,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function dey(cpu) {
   let value = bitwise_and(cpu.register_y - 1, 255);
@@ -3519,7 +4340,11 @@ function dey(cpu) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    value,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 
 // build/dev/javascript/gleamness/emulation/instructions/branch.mjs
@@ -3884,7 +4709,11 @@ function lda(cpu, value) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    value,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function ldx(cpu, value) {
   let cpu$1 = (() => {
@@ -3900,7 +4729,11 @@ function ldx(cpu, value) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    value,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function ldy(cpu, value) {
   let cpu$1 = (() => {
@@ -3916,7 +4749,11 @@ function ldy(cpu, value) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, value, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    value,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function sta(cpu, addr) {
   let $ = write(cpu, addr, cpu.register_a);
@@ -3962,7 +4799,11 @@ function and(cpu, value) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function eor(cpu, value) {
   let result = bitwise_exclusive_or(cpu.register_a, value);
@@ -3979,7 +4820,11 @@ function eor(cpu, value) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function ora(cpu, value) {
   let result = bitwise_or(cpu.register_a, value);
@@ -3996,7 +4841,11 @@ function ora(cpu, value) {
       _record.bus
     );
   })();
-  return update_flags(cpu$1, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$1,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function bit(cpu, value) {
   let result = bitwise_and(cpu.register_a, value);
@@ -4070,7 +4919,11 @@ function asl(cpu, addr, value, mode) {
       }
     }
   })();
-  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$3,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function lsr(cpu, addr, value, mode) {
   let carry = (() => {
@@ -4114,7 +4967,11 @@ function lsr(cpu, addr, value, mode) {
       }
     }
   })();
-  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$3,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function rol(cpu, addr, value, mode) {
   let current_carry = (() => {
@@ -4169,7 +5026,11 @@ function rol(cpu, addr, value, mode) {
       }
     }
   })();
-  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$3,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 function ror(cpu, addr, value, mode) {
   let current_carry = (() => {
@@ -4224,7 +5085,11 @@ function ror(cpu, addr, value, mode) {
       }
     }
   })();
-  return update_flags(cpu$3, result, toList([flag_zero, flag_negative]));
+  return update_flags(
+    cpu$3,
+    result,
+    from_list2(toList([flag_zero, flag_negative]))
+  );
 }
 
 // build/dev/javascript/gleamness/emulation/instructions/stack_ops.mjs
@@ -4255,7 +5120,11 @@ function pla(cpu) {
         _record.bus
       );
     })();
-    return update_flags(cpu2, value, toList([flag_zero, flag_negative]));
+    return update_flags(
+      cpu2,
+      value,
+      from_list2(toList([flag_zero, flag_negative]))
+    );
   } else {
     return cpu;
   }
@@ -4320,7 +5189,7 @@ function tax(cpu) {
   return update_flags(
     cpu$1,
     cpu$1.register_x,
-    toList([flag_zero, flag_negative])
+    from_list2(toList([flag_zero, flag_negative]))
   );
 }
 function tay(cpu) {
@@ -4340,7 +5209,7 @@ function tay(cpu) {
   return update_flags(
     cpu$1,
     cpu$1.register_y,
-    toList([flag_zero, flag_negative])
+    from_list2(toList([flag_zero, flag_negative]))
   );
 }
 function txa(cpu) {
@@ -4360,7 +5229,7 @@ function txa(cpu) {
   return update_flags(
     cpu$1,
     cpu$1.register_a,
-    toList([flag_zero, flag_negative])
+    from_list2(toList([flag_zero, flag_negative]))
   );
 }
 function tya(cpu) {
@@ -4380,7 +5249,7 @@ function tya(cpu) {
   return update_flags(
     cpu$1,
     cpu$1.register_a,
-    toList([flag_zero, flag_negative])
+    from_list2(toList([flag_zero, flag_negative]))
   );
 }
 function tsx(cpu) {
@@ -4400,7 +5269,7 @@ function tsx(cpu) {
   return update_flags(
     cpu$1,
     cpu$1.register_x,
-    toList([flag_zero, flag_negative])
+    from_list2(toList([flag_zero, flag_negative]))
   );
 }
 function txs(cpu) {
@@ -4427,7 +5296,7 @@ function get_new_cpu() {
     0,
     stack_reset,
     init_memory(),
-    new Bus(init_memory())
+    new Bus(repeat2(0, 8192))
   );
 }
 function reset(cpu) {
@@ -4466,30 +5335,26 @@ function reset(cpu) {
     return new Error(void 0);
   }
 }
-function load_bytes(loop$cpu, loop$bytes, loop$address) {
-  while (true) {
-    let cpu = loop$cpu;
-    let bytes = loop$bytes;
-    let address = loop$address;
-    if (bytes.hasLength(0)) {
-      return new Ok(cpu);
-    } else {
-      let first2 = bytes.head;
-      let rest = bytes.tail;
-      let $ = write(cpu, address, first2);
-      if ($.isOk()) {
-        let new_cpu = $[0];
-        loop$cpu = new_cpu;
-        loop$bytes = rest;
-        loop$address = address + 1;
+function load_at_address(cpu, program, start_address) {
+  let length4 = length3(program);
+  return fold5(
+    range(0, length4 - 1),
+    new Ok(cpu),
+    (acc, index3) => {
+      if (!acc.isOk()) {
+        return acc;
       } else {
-        return new Error(void 0);
+        let current_cpu = acc[0];
+        let $ = get(program, index3);
+        if ($.isOk()) {
+          let byte = $[0];
+          return write(current_cpu, start_address + index3, byte);
+        } else {
+          return new Error(void 0);
+        }
       }
     }
-  }
-}
-function load_at_address(cpu, program, start_address) {
-  return load_bytes(cpu, program, start_address);
+  );
 }
 function load(cpu, program) {
   let $ = load_at_address(cpu, program, 1536);
@@ -4500,28 +5365,11 @@ function load(cpu, program) {
     return new Error(void 0);
   }
 }
-function find_matching_instruction(loop$instructions, loop$opcode) {
-  while (true) {
-    let instructions = loop$instructions;
-    let opcode = loop$opcode;
-    if (instructions.hasLength(0)) {
-      return new None();
-    } else {
-      let instr = instructions.head;
-      let rest = instructions.tail;
-      let $ = instr.opcode === opcode;
-      if ($) {
-        return new Some(instr);
-      } else {
-        loop$instructions = rest;
-        loop$opcode = opcode;
-      }
-    }
-  }
-}
 function find_instruction(opcode) {
   let instructions = get_all_instructions();
-  return find_matching_instruction(instructions, opcode);
+  return find2(instructions, (instr) => {
+    return instr.opcode === opcode;
+  });
 }
 function execute_instruction(cpu, instruction, operand_addr, operand_value) {
   let $ = instruction.mnemonic;
@@ -4661,11 +5509,8 @@ function interpret_loop(loop$cpu, loop$program, loop$callback) {
     let program = loop$program;
     let callback = loop$callback;
     let cpu$1 = callback(cpu);
-    let $ = get_list_value_by_index(
-      program,
-      cpu$1.program_counter
-    );
-    if (!$.isOk() && !$[0]) {
+    let $ = get(program, cpu$1.program_counter);
+    if (!$.isOk()) {
       return cpu$1;
     } else {
       let opcode = $[0];
@@ -4684,11 +5529,12 @@ function interpret_loop(loop$cpu, loop$program, loop$callback) {
         );
       })();
       let cpu$3 = (() => {
-        if (instruction instanceof Some && instruction[0].opcode === 0) {
+        if (instruction.isOk() && instruction[0].opcode === 0) {
           let instr = instruction[0];
           return cpu$2;
-        } else if (instruction instanceof Some) {
+        } else if (instruction.isOk()) {
           let instr = instruction[0];
+          debug(instr);
           let $1 = get_operand_address(
             cpu$2,
             program,
@@ -4723,7 +5569,9 @@ function load_and_run_with_callback(cpu, program, callback) {
     let $1 = reset(new_cpu);
     if ($1.isOk()) {
       let reset_cpu = $1[0];
-      return new Ok(run_with_callback(reset_cpu, reset_cpu.memory, callback));
+      return new Ok(
+        run_with_callback(reset_cpu, reset_cpu.bus.cpu_vram, callback)
+      );
     } else {
       return new Error(void 0);
     }
@@ -4731,20 +5579,25 @@ function load_and_run_with_callback(cpu, program, callback) {
     return new Error(void 0);
   }
 }
-function load_and_run(cpu, program) {
-  return load_and_run_with_callback(cpu, program, (c) => {
-    return c;
-  });
-}
 
 // build/dev/javascript/gleamness/emulation/screen.mjs
-var Color = class extends CustomType {
-  constructor(r, g, b) {
-    super();
-    this.r = r;
-    this.g = g;
-    this.b = b;
-  }
+var Black = class extends CustomType {
+};
+var White = class extends CustomType {
+};
+var Grey = class extends CustomType {
+};
+var Red = class extends CustomType {
+};
+var Green = class extends CustomType {
+};
+var Blue = class extends CustomType {
+};
+var Magenta = class extends CustomType {
+};
+var Yellow = class extends CustomType {
+};
+var Cyan = class extends CustomType {
 };
 var ScreenState = class extends CustomType {
   constructor(frame, changed) {
@@ -4754,79 +5607,107 @@ var ScreenState = class extends CustomType {
   }
 };
 function new_screen_state() {
-  return new ScreenState(repeat(0, 32 * 32 * 3), false);
+  return new ScreenState(repeat2(0, 32 * 32 * 3), false);
 }
 function get_color(byte) {
   if (byte === 0) {
-    return new Color(0, 0, 0);
+    return new Black();
   } else if (byte === 1) {
-    return new Color(255, 255, 255);
+    return new White();
   } else if (byte === 2) {
-    return new Color(128, 128, 128);
+    return new Grey();
   } else if (byte === 9) {
-    return new Color(128, 128, 128);
+    return new Grey();
   } else if (byte === 3) {
-    return new Color(255, 0, 0);
+    return new Red();
   } else if (byte === 10) {
-    return new Color(255, 0, 0);
+    return new Red();
   } else if (byte === 4) {
-    return new Color(0, 255, 0);
+    return new Green();
   } else if (byte === 11) {
-    return new Color(0, 255, 0);
+    return new Green();
   } else if (byte === 5) {
-    return new Color(0, 0, 255);
+    return new Blue();
   } else if (byte === 12) {
-    return new Color(0, 0, 255);
+    return new Blue();
   } else if (byte === 6) {
-    return new Color(255, 0, 255);
+    return new Magenta();
   } else if (byte === 13) {
-    return new Color(255, 0, 255);
+    return new Magenta();
   } else if (byte === 7) {
-    return new Color(255, 255, 0);
+    return new Yellow();
   } else if (byte === 14) {
-    return new Color(255, 255, 0);
+    return new Yellow();
   } else {
-    return new Color(0, 255, 255);
+    return new Cyan();
   }
 }
-function update_frame_slice(frame, idx, value) {
-  let before = take(frame, idx);
-  let after = drop(frame, idx + 1);
-  return append(before, prepend(value, after));
+function color_to_rgb(color) {
+  if (color instanceof Black) {
+    return [0, 0, 0];
+  } else if (color instanceof White) {
+    return [255, 255, 255];
+  } else if (color instanceof Grey) {
+    return [128, 128, 128];
+  } else if (color instanceof Red) {
+    return [255, 0, 0];
+  } else if (color instanceof Green) {
+    return [0, 255, 0];
+  } else if (color instanceof Blue) {
+    return [0, 0, 255];
+  } else if (color instanceof Magenta) {
+    return [255, 0, 255];
+  } else if (color instanceof Yellow) {
+    return [255, 255, 0];
+  } else {
+    return [0, 255, 255];
+  }
 }
-function update_frame_with_color(frame, frame_idx, color) {
+function update_frame_slice(frame, frame_idx, color) {
+  let $ = color_to_rgb(color);
+  let r = $[0];
+  let g = $[1];
+  let b = $[2];
   let _pipe = frame;
-  let _pipe$1 = ((f) => {
-    return update_frame_slice(f, frame_idx, color.r);
-  })(
-    _pipe
-  );
-  let _pipe$2 = ((f) => {
-    return update_frame_slice(f, frame_idx + 1, color.g);
-  })(
-    _pipe$1
-  );
-  return ((f) => {
-    return update_frame_slice(f, frame_idx + 2, color.b);
-  })(
-    _pipe$2
-  );
+  let _pipe$1 = try_set(_pipe, frame_idx, r);
+  let _pipe$2 = try_set(_pipe$1, frame_idx + 1, g);
+  return try_set(_pipe$2, frame_idx + 2, b);
 }
 function get_current_colors(frame, idx) {
-  let $ = drop(frame, idx);
-  if ($.atLeastLength(3)) {
-    let r = $.head;
-    let g = $.tail.head;
-    let b = $.tail.tail.head;
-    return toList([r, g, b]);
-  } else {
-    return toList([]);
-  }
+  let r = (() => {
+    let $ = get(frame, idx);
+    if ($.isOk()) {
+      let v = $[0];
+      return v;
+    } else {
+      return 0;
+    }
+  })();
+  let g = (() => {
+    let $ = get(frame, idx + 1);
+    if ($.isOk()) {
+      let v = $[0];
+      return v;
+    } else {
+      return 0;
+    }
+  })();
+  let b = (() => {
+    let $ = get(frame, idx + 2);
+    if ($.isOk()) {
+      let v = $[0];
+      return v;
+    } else {
+      return 0;
+    }
+  })();
+  return [r, g, b];
 }
 function read_screen_state(cpu, state) {
+  debug(to_list(state.frame));
   let new_frame = (() => {
     let _pipe = range(512, 1536);
-    return fold(
+    return fold5(
       _pipe,
       [state.frame, false],
       (acc, addr) => {
@@ -4836,14 +5717,19 @@ function read_screen_state(cpu, state) {
           let color_idx = $[0];
           let color = get_color(color_idx);
           let frame_idx = (addr - 512) * 3;
-          let current_colors = get_current_colors(frame2, frame_idx);
-          if (current_colors.hasLength(3) && (current_colors.head === color.r && current_colors.tail.head === color.g && current_colors.tail.tail.head === color.b)) {
-            let old_r = current_colors.head;
-            let old_g = current_colors.tail.head;
-            let old_b = current_colors.tail.tail.head;
+          let $1 = get_current_colors(frame2, frame_idx);
+          let old_r = $1[0];
+          let old_g = $1[1];
+          let old_b = $1[2];
+          let $2 = color_to_rgb(color);
+          let new_r = $2[0];
+          let new_g = $2[1];
+          let new_b = $2[2];
+          let $3 = old_r === new_r && old_g === new_g && old_b === new_b;
+          if ($3) {
             return acc;
           } else {
-            let new_frame2 = update_frame_with_color(frame2, frame_idx, color);
+            let new_frame2 = update_frame_slice(frame2, frame_idx, color);
             return [new_frame2, true];
           }
         } else {
@@ -4854,7 +5740,7 @@ function read_screen_state(cpu, state) {
   })();
   let frame = new_frame[0];
   let changed = new_frame[1];
-  return new ScreenState(frame, changed);
+  return new ScreenState(frame, changed || state.changed);
 }
 
 // build/dev/javascript/gleamness/ffi.mjs
@@ -4888,6 +5774,7 @@ function drawTexture(ctx, texture, x, y) {
   ctx.drawImage(texture.canvas, x, y);
 }
 function updateTextureWithFrame(texture, frameData, width2, height2) {
+  console.log(frameData);
   frameData = [...frameData];
   console.log(frameData.filter((v) => v !== 0));
   if (!texture || !texture.ctx)
@@ -4969,320 +5856,328 @@ function render_effect(msg) {
   );
 }
 function init2(_) {
-  let game_code = toList([
-    32,
-    6,
-    6,
-    32,
-    56,
-    6,
-    32,
-    13,
-    6,
-    32,
-    42,
-    6,
-    96,
-    169,
-    2,
-    133,
-    2,
-    169,
-    4,
-    133,
-    3,
-    169,
-    17,
-    133,
-    16,
-    169,
-    16,
-    133,
-    18,
-    169,
-    15,
-    133,
-    20,
-    169,
-    4,
-    133,
-    17,
-    133,
-    19,
-    133,
-    21,
-    96,
-    165,
-    254,
-    133,
-    0,
-    165,
-    254,
-    41,
-    3,
-    24,
-    105,
-    2,
-    133,
-    1,
-    96,
-    32,
-    77,
-    6,
-    32,
-    141,
-    6,
-    32,
-    195,
-    6,
-    32,
-    25,
-    7,
-    32,
-    32,
-    7,
-    32,
-    45,
-    7,
-    76,
-    56,
-    6,
-    165,
-    255,
-    201,
-    119,
-    240,
-    13,
-    201,
-    100,
-    240,
-    20,
-    201,
-    115,
-    240,
-    27,
-    201,
-    97,
-    240,
-    34,
-    96,
-    169,
-    4,
-    36,
-    2,
-    208,
-    38,
-    169,
-    1,
-    133,
-    2,
-    96,
-    169,
-    8,
-    36,
-    2,
-    208,
-    27,
-    169,
-    2,
-    133,
-    2,
-    96,
-    169,
-    1,
-    36,
-    2,
-    208,
-    16,
-    169,
-    4,
-    133,
-    2,
-    96,
-    169,
-    2,
-    36,
-    2,
-    208,
-    5,
-    169,
-    8,
-    133,
-    2,
-    96,
-    96,
-    32,
-    148,
-    6,
-    32,
-    168,
-    6,
-    96,
-    165,
-    0,
-    197,
-    16,
-    208,
-    13,
-    165,
-    1,
-    197,
-    17,
-    208,
-    7,
-    230,
-    3,
-    230,
-    3,
-    32,
-    42,
-    6,
-    96,
-    162,
-    2,
-    181,
-    16,
-    197,
-    16,
-    208,
-    6,
-    181,
-    17,
-    197,
-    17,
-    240,
-    9,
-    232,
-    232,
-    228,
-    3,
-    240,
-    6,
-    76,
-    170,
-    6,
-    76,
-    53,
-    7,
-    96,
-    166,
-    3,
-    202,
-    138,
-    181,
-    16,
-    149,
-    18,
-    202,
-    16,
-    249,
-    165,
-    2,
-    74,
-    176,
-    9,
-    74,
-    176,
-    25,
-    74,
-    176,
-    31,
-    74,
-    176,
-    47,
-    165,
-    16,
-    56,
-    233,
-    32,
-    133,
-    16,
-    144,
-    1,
-    96,
-    198,
-    17,
-    169,
-    1,
-    197,
-    17,
-    240,
-    40,
-    96,
-    230,
-    16,
-    169,
-    31,
-    36,
-    16,
-    240,
-    31,
-    96,
-    165,
-    16,
-    24,
-    105,
-    32,
-    133,
-    16,
-    176,
-    1,
-    96,
-    230,
-    17,
-    169,
-    6,
-    197,
-    17,
-    240,
-    12,
-    96,
-    198,
-    16,
-    165,
-    16,
-    41,
-    31,
-    201,
-    31,
-    240,
-    1,
-    96,
-    76,
-    53,
-    7,
-    160,
-    0,
-    165,
-    254,
-    145,
-    0,
-    96,
-    166,
-    3,
-    169,
-    0,
-    129,
-    16,
-    162,
-    0,
-    169,
-    1,
-    129,
-    16,
-    96,
-    162,
-    0,
-    234,
-    234,
-    202,
-    208,
-    251,
-    96
-  ]);
+  let game_code = from_list2(
+    toList([
+      32,
+      6,
+      6,
+      32,
+      56,
+      6,
+      32,
+      13,
+      6,
+      32,
+      42,
+      6,
+      96,
+      169,
+      2,
+      133,
+      2,
+      169,
+      4,
+      133,
+      3,
+      169,
+      17,
+      133,
+      16,
+      169,
+      16,
+      133,
+      18,
+      169,
+      15,
+      133,
+      20,
+      169,
+      4,
+      133,
+      17,
+      133,
+      19,
+      133,
+      21,
+      96,
+      165,
+      254,
+      133,
+      0,
+      165,
+      254,
+      41,
+      3,
+      24,
+      105,
+      2,
+      133,
+      1,
+      96,
+      32,
+      77,
+      6,
+      32,
+      141,
+      6,
+      32,
+      195,
+      6,
+      32,
+      25,
+      7,
+      32,
+      32,
+      7,
+      32,
+      45,
+      7,
+      76,
+      56,
+      6,
+      165,
+      255,
+      201,
+      119,
+      240,
+      13,
+      201,
+      100,
+      240,
+      20,
+      201,
+      115,
+      240,
+      27,
+      201,
+      97,
+      240,
+      34,
+      96,
+      169,
+      4,
+      36,
+      2,
+      208,
+      38,
+      169,
+      1,
+      133,
+      2,
+      96,
+      169,
+      8,
+      36,
+      2,
+      208,
+      27,
+      169,
+      2,
+      133,
+      2,
+      96,
+      169,
+      1,
+      36,
+      2,
+      208,
+      16,
+      169,
+      4,
+      133,
+      2,
+      96,
+      169,
+      2,
+      36,
+      2,
+      208,
+      5,
+      169,
+      8,
+      133,
+      2,
+      96,
+      96,
+      32,
+      148,
+      6,
+      32,
+      168,
+      6,
+      96,
+      165,
+      0,
+      197,
+      16,
+      208,
+      13,
+      165,
+      1,
+      197,
+      17,
+      208,
+      7,
+      230,
+      3,
+      230,
+      3,
+      32,
+      42,
+      6,
+      96,
+      162,
+      2,
+      181,
+      16,
+      197,
+      16,
+      208,
+      6,
+      181,
+      17,
+      197,
+      17,
+      240,
+      9,
+      232,
+      232,
+      228,
+      3,
+      240,
+      6,
+      76,
+      170,
+      6,
+      76,
+      53,
+      7,
+      96,
+      166,
+      3,
+      202,
+      138,
+      181,
+      16,
+      149,
+      18,
+      202,
+      16,
+      249,
+      165,
+      2,
+      74,
+      176,
+      9,
+      74,
+      176,
+      25,
+      74,
+      176,
+      31,
+      74,
+      176,
+      47,
+      165,
+      16,
+      56,
+      233,
+      32,
+      133,
+      16,
+      144,
+      1,
+      96,
+      198,
+      17,
+      169,
+      1,
+      197,
+      17,
+      240,
+      40,
+      96,
+      230,
+      16,
+      169,
+      31,
+      36,
+      16,
+      240,
+      31,
+      96,
+      165,
+      16,
+      24,
+      105,
+      32,
+      133,
+      16,
+      176,
+      1,
+      96,
+      230,
+      17,
+      169,
+      6,
+      197,
+      17,
+      240,
+      12,
+      96,
+      198,
+      16,
+      165,
+      16,
+      41,
+      31,
+      201,
+      31,
+      240,
+      1,
+      96,
+      76,
+      53,
+      7,
+      160,
+      0,
+      165,
+      254,
+      145,
+      0,
+      96,
+      166,
+      3,
+      169,
+      0,
+      129,
+      16,
+      162,
+      0,
+      169,
+      1,
+      129,
+      16,
+      96,
+      162,
+      0,
+      234,
+      234,
+      202,
+      208,
+      251,
+      96
+    ])
+  );
   let new_cpu = get_new_cpu();
   let cpu_with_game = (() => {
-    let $ = load_and_run(new_cpu, game_code);
+    let $ = load_and_run_with_callback(
+      new_cpu,
+      game_code,
+      (cpu) => {
+        return cpu;
+      }
+    );
     if ($.isOk()) {
       let loaded_cpu = $[0];
       return loaded_cpu;
@@ -5296,12 +6191,14 @@ function init2(_) {
       32,
       32,
       10,
-      toList([]),
+      from_list2(toList([])),
       new None(),
       new None(),
       new_screen_state()
     ),
-    batch(toList([every2(16, new Tick()), render_effect(new Mounted())]))
+    batch(
+      toList([every2(1600, new Tick()), render_effect(new Mounted())])
+    )
   ];
 }
 function update(model, msg) {
@@ -5321,7 +6218,7 @@ function update(model, msg) {
       if ($2) {
         updateTextureWithFrame(
           texture,
-          model.cpu.memory,
+          to_list(new_screen_state2.frame),
           model.window_width,
           model.window_height
         );
@@ -5380,7 +6277,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            186,
+            193,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -5394,7 +6291,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            190,
+            197,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -5408,7 +6305,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            194,
+            201,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -5422,7 +6319,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            198,
+            205,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -5442,7 +6339,7 @@ function update(model, msg) {
           _record.window_width,
           _record.window_height,
           _record.scale,
-          prepend(key, model.key_pressed),
+          prepend4(model.key_pressed, key),
           _record.canvas_ctx,
           _record.texture,
           _record.screen_state
@@ -5501,7 +6398,7 @@ function main() {
     throw makeError(
       "let_assert",
       "gleamness",
-      232,
+      244,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

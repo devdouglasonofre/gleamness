@@ -1,7 +1,9 @@
 import emulation/types.{type CpuInstruction, CpuInstruction}
+import iv
 
-pub fn get_all_instructions() -> List(CpuInstruction) {
-  [
+// Return an iv array instead of a list for better lookup performance
+pub fn get_all_instructions() -> iv.Array(CpuInstruction) {
+  iv.from_list([
     // ADC (Add with Carry)
     CpuInstruction(0x69, "ADC", 2, 2, types.Immediate),
     CpuInstruction(0x65, "ADC", 2, 3, types.ZeroPage),
@@ -209,5 +211,5 @@ pub fn get_all_instructions() -> List(CpuInstruction) {
     CpuInstruction(0x9A, "TXS", 1, 2, types.NoneAddressing),
     // TYA (Transfer Y to Accumulator)
     CpuInstruction(0x98, "TYA", 1, 2, types.NoneAddressing),
-  ]
+  ])
 }

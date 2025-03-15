@@ -30,12 +30,6 @@ export function drawTexture(ctx, texture, x, y) {
   ctx.drawImage(texture.canvas, x, y);
 }
 
-export function clearTexture(texture, r, g, b) {
-  if (!texture || !texture.ctx) return;
-  texture.ctx.fillStyle = `rgb(${r},${g},${b})`;
-  texture.ctx.fillRect(0, 0, texture.canvas.width, texture.canvas.height);
-}
-
 export function setPixel(texture, x, y, r, g, b) {
   if (!texture || !texture.ctx) return;
   texture.ctx.fillStyle = `rgb(${r},${g},${b})`;
@@ -43,6 +37,7 @@ export function setPixel(texture, x, y, r, g, b) {
 }
 
 export function updateTextureWithFrame(texture, frameData, width, height) {
+  console.log(frameData)
   frameData = [...frameData]
   console.log(frameData.filter(v => v !== 0));
   if (!texture || !texture.ctx) return;

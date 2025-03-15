@@ -2,6 +2,7 @@ import emulation/flags
 import emulation/stack
 import emulation/types.{type CPU, flag_negative, flag_unused, flag_zero}
 import gleam/int
+import iv
 
 // Push Accumulator to stack
 pub fn pha(cpu: CPU) -> CPU {
@@ -16,7 +17,7 @@ pub fn pla(cpu: CPU) -> CPU {
   case stack.pull(cpu) {
     Ok(#(cpu1, value)) -> {
       let cpu2 = types.CPU(..cpu1, register_a: value)
-      flags.update_flags(cpu2, value, [flag_zero, flag_negative])
+      flags.update_flags(cpu2, value, iv.from_list([flag_zero, flag_negative]))
     }
     Error(Nil) -> cpu
   }

@@ -1,4 +1,3 @@
-import emulation/helpers/list_helpers
 import emulation/memory
 import emulation/types.{
   type AddressingMode, type CPU, Absolute, AbsoluteX, AbsoluteY, Accumulator,
@@ -6,20 +5,21 @@ import emulation/types.{
   ZeroPageX, ZeroPageY,
 }
 import gleam/int
+import gleam/result
+import iv
 
 // Helper to fetch a byte from program memory at PC
-fn fetch_byte(cpu: CPU, program: List(Int)) -> #(CPU, Int) {
-  case list_helpers.get_list_value_by_index(program, cpu.program_counter) {
-    Ok(byte) -> {
-      let new_cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
-      #(new_cpu, byte)
-    }
-    Error(Nil) -> #(cpu, 0)
-  }
+fn fetch_byte(cpu: CPU, program: iv.Array(Int)) -> #(CPU, Int) {
+  iv.get(program, cpu.program_counter)
+  |> result.map(fn(byte) {
+    let new_cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
+    #(new_cpu, byte)
+  })
+  |> result.unwrap(#(cpu, 0))
 }
 
 // Helper to fetch a 16-bit word from program memory at PC (little-endian)
-fn fetch_word(cpu: CPU, program: List(Int)) -> #(CPU, Int) {
+fn fetch_word(cpu: CPU, program: iv.Array(Int)) -> #(CPU, Int) {
   case fetch_byte(cpu, program) {
     #(cpu_after_lo, lo) -> {
       case fetch_byte(cpu_after_lo, program) {
@@ -35,7 +35,7 @@ fn fetch_word(cpu: CPU, program: List(Int)) -> #(CPU, Int) {
 // Get the operand address based on the addressing mode
 pub fn get_operand_address(
   cpu: CPU,
-  program: List(Int),
+  program: iv.Array(Int),
   mode: AddressingMode,
 ) -> #(CPU, Int) {
   case mode {
@@ -182,16 +182,14 @@ pub fn get_operand_address(
 // Get operand value based on addressing mode and address
 pub fn get_operand_value(
   cpu: CPU,
-  program: List(Int),
+  program: iv.Array(Int),
   mode: AddressingMode,
   operand_addr: Int,
 ) -> Int {
   case mode {
     Immediate -> {
-      case list_helpers.get_list_value_by_index(program, operand_addr) {
-        Ok(value) -> value
-        Error(Nil) -> 0
-      }
+      iv.get(program, operand_addr)
+      |> result.unwrap(0)
     }
 
     Accumulator -> cpu.register_a

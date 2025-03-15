@@ -2,10 +2,14 @@ import emulation/types.{
   type CPU, flag_carry, flag_negative, flag_overflow, flag_unused, flag_zero,
 }
 import gleam/int
-import gleam/list
+import iv
 
 // Update CPU flags based on the result of an operation
-pub fn update_flags(cpu: CPU, result: Int, flags_to_update: List(Int)) -> CPU {
+pub fn update_flags(
+  cpu: CPU,
+  result: Int,
+  flags_to_update: iv.Array(Int),
+) -> CPU {
   // Start with the current status
   let status = cpu.status
 
@@ -14,7 +18,7 @@ pub fn update_flags(cpu: CPU, result: Int, flags_to_update: List(Int)) -> CPU {
 
   // Update specified flags
   let status =
-    list.fold(flags_to_update, status, fn(status, flag) {
+    iv.fold(flags_to_update, status, fn(status, flag) {
       case flag {
         // Zero flag - set if result is zero
         f if f == flag_zero -> {

@@ -1,6 +1,8 @@
-import emulation/helpers/list_helpers
 import emulation/types.{type Bus, Bus}
 import gleam/int
+import gleam/io
+import gleam/result
+import iv
 
 // Memory map constants
 pub const ram_start = 0x0000
@@ -17,7 +19,8 @@ pub fn mem_read(bus: Bus, addr: Int) -> Result(Int, Nil) {
     addr if addr >= ram_start && addr <= ram_mirrors_end -> {
       // Mirror down RAM address
       let mirror_down_addr = int.bitwise_and(addr, 0b0000011111111111)
-      list_helpers.get_list_value_by_index(bus.cpu_vram, mirror_down_addr)
+      iv.get(bus.cpu_vram, mirror_down_addr)
+      |> result.replace_error(Nil)
     }
 
     addr if addr >= ppu_registers && addr <= ppu_registers_mirrors_end -> {
@@ -40,16 +43,8 @@ pub fn mem_write(bus: Bus, addr: Int, data: Int) -> Result(Bus, Nil) {
     addr if addr >= ram_start && addr <= ram_mirrors_end -> {
       // Mirror down RAM address
       let mirror_down_addr = int.bitwise_and(addr, 0b0000011111111111)
-      case
-        list_helpers.set_list_value_by_index(
-          bus.cpu_vram,
-          mirror_down_addr,
-          data,
-        )
-      {
-        Ok(new_vram) -> Ok(Bus(cpu_vram: new_vram))
-        Error(Nil) -> Error(Nil)
-      }
+      let new_vram = iv.try_set(bus.cpu_vram, mirror_down_addr, data)
+      Ok(Bus(cpu_vram: new_vram))
     }
 
     addr if addr >= ppu_registers && addr <= ppu_registers_mirrors_end -> {

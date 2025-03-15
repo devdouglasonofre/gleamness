@@ -2,6 +2,7 @@ import emulation/flags
 import emulation/memory
 import emulation/types.{type CPU, flag_carry, flag_negative, flag_zero}
 import gleam/int
+import iv
 
 // Add with Carry
 pub fn adc(cpu: CPU, value: Int) -> CPU {
@@ -30,7 +31,7 @@ pub fn adc(cpu: CPU, value: Int) -> CPU {
 
   // Update flags
   let cpu = flags.update_overflow_and_carry_flags(cpu, overflow_set, carry_set)
-  flags.update_flags(cpu, result, [flag_zero, flag_negative])
+  flags.update_flags(cpu, result, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Subtract with Carry
@@ -48,7 +49,11 @@ pub fn inc(cpu: CPU, addr: Int) -> CPU {
       let new_value = int.bitwise_and(value + 1, 0xFF)
       case memory.write(cpu, addr, new_value) {
         Ok(new_cpu) ->
-          flags.update_flags(new_cpu, new_value, [flag_zero, flag_negative])
+          flags.update_flags(
+            new_cpu,
+            new_value,
+            iv.from_list([flag_zero, flag_negative]),
+          )
         Error(Nil) -> cpu
       }
     }
@@ -63,7 +68,11 @@ pub fn dec(cpu: CPU, addr: Int) -> CPU {
       let new_value = int.bitwise_and(value - 1, 0xFF)
       case memory.write(cpu, addr, new_value) {
         Ok(new_cpu) ->
-          flags.update_flags(new_cpu, new_value, [flag_zero, flag_negative])
+          flags.update_flags(
+            new_cpu,
+            new_value,
+            iv.from_list([flag_zero, flag_negative]),
+          )
         Error(Nil) -> cpu
       }
     }
@@ -75,26 +84,26 @@ pub fn dec(cpu: CPU, addr: Int) -> CPU {
 pub fn inx(cpu: CPU) -> CPU {
   let value = int.bitwise_and(cpu.register_x + 1, 0xFF)
   let cpu = types.CPU(..cpu, register_x: value)
-  flags.update_flags(cpu, value, [flag_zero, flag_negative])
+  flags.update_flags(cpu, value, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Increment Y register
 pub fn iny(cpu: CPU) -> CPU {
   let value = int.bitwise_and(cpu.register_y + 1, 0xFF)
   let cpu = types.CPU(..cpu, register_y: value)
-  flags.update_flags(cpu, value, [flag_zero, flag_negative])
+  flags.update_flags(cpu, value, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Decrement X register
 pub fn dex(cpu: CPU) -> CPU {
   let value = int.bitwise_and(cpu.register_x - 1, 0xFF)
   let cpu = types.CPU(..cpu, register_x: value)
-  flags.update_flags(cpu, value, [flag_zero, flag_negative])
+  flags.update_flags(cpu, value, iv.from_list([flag_zero, flag_negative]))
 }
 
 // Decrement Y register
 pub fn dey(cpu: CPU) -> CPU {
   let value = int.bitwise_and(cpu.register_y - 1, 0xFF)
   let cpu = types.CPU(..cpu, register_y: value)
-  flags.update_flags(cpu, value, [flag_zero, flag_negative])
+  flags.update_flags(cpu, value, iv.from_list([flag_zero, flag_negative]))
 }

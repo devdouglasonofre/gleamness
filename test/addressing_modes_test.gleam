@@ -4,6 +4,7 @@ import emulation/types
 import gleam/int
 import gleeunit
 import gleeunit/should
+import iv
 
 pub fn main() {
   gleeunit.main()
@@ -14,7 +15,7 @@ pub fn lda_immediate_test() {
   let cpu = cpu.get_new_cpu()
 
   // LDA #$42 (Load immediate value $42 into accumulator)
-  let result_cpu = cpu.run(cpu, [0xa9, 0x42, 0x00])
+  let result_cpu = cpu.run(cpu, iv.from_list([0xa9, 0x42, 0x00]))
   // 0xA9 = LDA immediate, 0x00 = BRK
 
   result_cpu.register_a
@@ -34,7 +35,8 @@ pub fn lda_zero_page_test() {
   }
 
   // LDA $42 (Load value at zero page address $42 into accumulator)
-  let result_cpu = cpu.run(cpu_with_memory, [0xa5, memory_addr, 0x00])
+  let result_cpu =
+    cpu.run(cpu_with_memory, iv.from_list([0xa5, memory_addr, 0x00]))
   // 0xA5 = LDA zero page
 
   result_cpu.register_a
@@ -57,7 +59,8 @@ pub fn lda_zero_page_x_test() {
   }
 
   // LDA $40,X (Load value at zero page address $40+X into accumulator)
-  let result_cpu = cpu.run(cpu_with_memory, [0xb5, base_addr, 0x00])
+  let result_cpu =
+    cpu.run(cpu_with_memory, iv.from_list([0xb5, base_addr, 0x00]))
   // 0xB5 = LDA zero page,X
 
   result_cpu.register_a
@@ -71,7 +74,7 @@ pub fn tax_updates_correct_flags_test() {
   // Negative value
 
   // TAX (Transfer A to X)
-  let result_cpu = cpu.run(cpu_with_a, [0xaa, 0x00])
+  let result_cpu = cpu.run(cpu_with_a, iv.from_list([0xaa, 0x00]))
   // 0xAA = TAX
 
   // Check X has value from A

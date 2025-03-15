@@ -1,24 +1,14 @@
 import emulation/bus
-import emulation/helpers/list_helpers
 import emulation/types.{type CPU}
 import gleam/int
+import gleam/io
+import gleam/result
+import iv
 
 // Initialize memory with 0x0 until 0xFFFF (65535 bytes)
-pub fn init_memory() -> List(Int) {
-  init_memory_with_size(0xFFFF)
-}
-
-// Helper function to create a list of zeros with specified size
-fn init_memory_with_size(size: Int) -> List(Int) {
-  init_memory_with_size_tail(size, [])
-}
-
-// Tail recursive implementation with accumulator
-fn init_memory_with_size_tail(remaining: Int, acc: List(Int)) -> List(Int) {
-  case remaining {
-    0 -> acc
-    n -> init_memory_with_size_tail(n - 1, [0, ..acc])
-  }
+pub fn init_memory() -> iv.Array(Int) {
+  // Much more efficient initialization using iv.repeat
+  iv.repeat(0, 0xFFFF)
 }
 
 // Read a byte from memory
@@ -26,8 +16,10 @@ pub fn read(cpu: CPU, address: Int) -> Result(Int, Nil) {
   // Prefer using bus for memory operations when possible
   case address < 0x2000 {
     True -> bus.mem_read(cpu.bus, address)
-    // For compatibility with existing code, still support direct memory access
-    False -> list_helpers.get_list_value_by_index(cpu.memory, address)
+    // Use iv.get for direct memory access
+    False ->
+      iv.get(cpu.memory, address)
+      |> result.replace_error(Nil)
   }
 }
 
@@ -41,12 +33,10 @@ pub fn write(cpu: CPU, address: Int, data: Int) -> Result(CPU, Nil) {
         Error(Nil) -> Error(Nil)
       }
     }
-    // For compatibility with existing code, still support direct memory access
+    // Use iv.set for direct memory access
     False -> {
-      case list_helpers.set_list_value_by_index(cpu.memory, address, data) {
-        Ok(new_memory) -> Ok(types.CPU(..cpu, memory: new_memory))
-        Error(Nil) -> Error(Nil)
-      }
+      let new_memory = iv.try_set(cpu.memory, address, data)
+      Ok(types.CPU(..cpu, memory: new_memory))
     }
   }
 }
