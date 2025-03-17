@@ -1156,11 +1156,11 @@ var unicode_whitespaces = [
 ].join("");
 var trim_start_regex = new RegExp(`^[${unicode_whitespaces}]*`);
 var trim_end_regex = new RegExp(`[${unicode_whitespaces}]*$`);
-function floor(float4) {
-  return Math.floor(float4);
+function floor(float3) {
+  return Math.floor(float3);
 }
-function round(float4) {
-  return Math.round(float4);
+function round(float3) {
+  return Math.round(float3);
 }
 function random_uniform() {
   const random_uniform_result = Math.random();
@@ -2907,25 +2907,25 @@ function createElementNode({ prev, next, dispatch: dispatch2, stack }) {
   return el;
 }
 var registeredHandlers = /* @__PURE__ */ new WeakMap();
-function lustreGenericEventHandler(event2) {
-  const target = event2.currentTarget;
+function lustreGenericEventHandler(event) {
+  const target = event.currentTarget;
   if (!registeredHandlers.has(target)) {
-    target.removeEventListener(event2.type, lustreGenericEventHandler);
+    target.removeEventListener(event.type, lustreGenericEventHandler);
     return;
   }
   const handlersForEventTarget = registeredHandlers.get(target);
-  if (!handlersForEventTarget.has(event2.type)) {
-    target.removeEventListener(event2.type, lustreGenericEventHandler);
+  if (!handlersForEventTarget.has(event.type)) {
+    target.removeEventListener(event.type, lustreGenericEventHandler);
     return;
   }
-  handlersForEventTarget.get(event2.type)(event2);
+  handlersForEventTarget.get(event.type)(event);
 }
-function lustreServerEventHandler(event2) {
-  const el = event2.currentTarget;
-  const tag = el.getAttribute(`data-lustre-on-${event2.type}`);
+function lustreServerEventHandler(event) {
+  const el = event.currentTarget;
+  const tag = el.getAttribute(`data-lustre-on-${event.type}`);
   const data = JSON.parse(el.getAttribute("data-lustre-data") || "{}");
   const include = JSON.parse(el.getAttribute("data-lustre-include") || "[]");
-  switch (event2.type) {
+  switch (event.type) {
     case "input":
     case "change":
       include.push("target.value");
@@ -2936,7 +2936,7 @@ function lustreServerEventHandler(event2) {
     data: include.reduce(
       (data2, property2) => {
         const path = property2.split(".");
-        for (let i = 0, o = data2, e = event2; i < path.length; i++) {
+        for (let i = 0, o = data2, e = event; i < path.length; i++) {
           if (i === path.length - 1) {
             o[path[i]] = e[path[i]];
           } else {
@@ -3067,8 +3067,8 @@ var LustreClientApplication = class _LustreClientApplication {
         this.#queue = [];
         this.#model = action[0][0];
         const vdom = this.#view(this.#model);
-        const dispatch2 = (handler, immediate = false) => (event2) => {
-          const result = handler(event2);
+        const dispatch2 = (handler, immediate = false) => (event) => {
+          const result = handler(event);
           if (result instanceof Ok) {
             this.send(new Dispatch(result[0], immediate));
           }
@@ -3087,10 +3087,10 @@ var LustreClientApplication = class _LustreClientApplication {
         this.#tickScheduled = window.setTimeout(() => this.#tick());
       }
     } else if (action instanceof Emit2) {
-      const event2 = action[0];
+      const event = action[0];
       const data = action[1];
       this.root.dispatchEvent(
-        new CustomEvent(event2, {
+        new CustomEvent(event, {
           detail: data,
           bubbles: true,
           composed: true
@@ -3124,8 +3124,8 @@ var LustreClientApplication = class _LustreClientApplication {
     this.#tickScheduled = void 0;
     this.#flush(effects);
     const vdom = this.#view(this.#model);
-    const dispatch2 = (handler, immediate = false) => (event2) => {
-      const result = handler(event2);
+    const dispatch2 = (handler, immediate = false) => (event) => {
+      const result = handler(event);
       if (result instanceof Ok) {
         this.send(new Dispatch(result[0], immediate));
       }
@@ -3143,8 +3143,8 @@ var LustreClientApplication = class _LustreClientApplication {
     while (effects.length > 0) {
       const effect = effects.shift();
       const dispatch2 = (msg) => this.send(new Dispatch(msg));
-      const emit2 = (event2, data) => this.root.dispatchEvent(
-        new CustomEvent(event2, {
+      const emit2 = (event, data) => this.root.dispatchEvent(
+        new CustomEvent(event, {
           detail: data,
           bubbles: true,
           composed: true
@@ -3201,9 +3201,9 @@ var LustreServerApplication = class _LustreServerApplication {
       this.#queue.push(action[0]);
       this.#tick();
     } else if (action instanceof Emit2) {
-      const event2 = new Emit(action[0], action[1]);
+      const event = new Emit(action[0], action[1]);
       for (const [_, renderer] of this.#renderers) {
-        renderer(event2);
+        renderer(event);
       }
     } else if (action instanceof Event2) {
       const handler = this.#handlers.get(action[0]);
@@ -3254,8 +3254,8 @@ var LustreServerApplication = class _LustreServerApplication {
     while (effects.length > 0) {
       const effect = effects.shift();
       const dispatch2 = (msg) => this.send(new Dispatch(msg));
-      const emit2 = (event2, data) => this.root.dispatchEvent(
-        new CustomEvent(event2, {
+      const emit2 = (event, data) => this.root.dispatchEvent(
+        new CustomEvent(event, {
           detail: data,
           bubbles: true,
           composed: true
@@ -6111,7 +6111,7 @@ function init2(_) {
     throw makeError(
       "let_assert",
       "gleamness",
-      129,
+      126,
       "init",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }
@@ -6258,7 +6258,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            216,
+            213,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6272,7 +6272,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            220,
+            217,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6286,7 +6286,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            224,
+            221,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6300,7 +6300,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            228,
+            225,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6354,11 +6354,11 @@ function update(model, msg) {
     ];
   }
 }
-function handle_key_event(event2, dispatch2) {
-  let key_result = field("key", string)(event2);
+function handle_key_event(event, dispatch2) {
+  let key_result = field("key", string)(event);
   if (key_result.isOk()) {
     let key = key_result[0];
-    let $ = field("type", string)(event2);
+    let $ = field("type", string)(event);
     if ($.isOk() && $[0] === "keydown") {
       dispatch2(new KeyDown(key));
     } else if ($.isOk() && $[0] === "keyup") {
@@ -6387,7 +6387,7 @@ function main() {
     throw makeError(
       "let_assert",
       "gleamness",
-      288,
+      285,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }
@@ -6396,9 +6396,9 @@ function main() {
   let to_runtime = $[0];
   window_add_event_listener(
     "keydown",
-    (event2) => {
+    (event) => {
       return handle_key_event(
-        event2,
+        event,
         (msg) => {
           let _pipe = dispatch(msg);
           return to_runtime(_pipe);
@@ -6408,9 +6408,9 @@ function main() {
   );
   window_add_event_listener(
     "keyup",
-    (event2) => {
+    (event) => {
       return handle_key_event(
-        event2,
+        event,
         (msg) => {
           let _pipe = dispatch(msg);
           return to_runtime(_pipe);

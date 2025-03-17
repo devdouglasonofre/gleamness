@@ -2,6 +2,7 @@ import emulation/cpu
 import emulation/memory
 import emulation/screen.{type ScreenState}
 import emulation/types.{type CPU}
+import gleam/dynamic
 import gleam/dynamic/decode.{type Dynamic}
 import gleam/int
 import gleam/option.{type Option}
