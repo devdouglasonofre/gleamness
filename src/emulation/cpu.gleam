@@ -2,6 +2,7 @@ import emulation/addressing
 import emulation/helpers/instruction_helpers
 import emulation/instructions/arithmetic
 import emulation/instructions/branch
+import emulation/instructions/comparison
 import emulation/instructions/flag_ops
 import emulation/instructions/jump
 import emulation/instructions/load_store
@@ -12,7 +13,6 @@ import emulation/memory
 import emulation/types.{
   type CPU, type CpuInstruction, Bus, flag_unused, stack_reset,
 }
-import gleam/io
 import iv
 
 // Initialize a new CPU with default state
@@ -140,7 +140,6 @@ pub fn run(cpu: CPU, callback: fn(CPU) -> CPU) -> CPU {
               operand_addr,
             )
 
-          io.debug(instr)
           execute_instruction(
             cpu_after_fetch,
             instr,
@@ -245,6 +244,12 @@ fn execute_instruction(
     "CLV" -> flag_ops.clv(cpu)
     "NOP" -> flag_ops.nop(cpu)
     "BRK" -> flag_ops.brk(cpu)
+
+    // Comparison Instructions (missing)
+    "CMP" -> comparison.cmp(cpu, operand_value)
+    "CPX" -> comparison.cpx(cpu, operand_value)
+    "CPY" -> comparison.cpy(cpu, operand_value)
+
     _ -> cpu
   }
 }

@@ -9,8 +9,9 @@ pub fn jmp(cpu: CPU, addr: Int) -> CPU {
 
 // Jump to Subroutine
 pub fn jsr(cpu: CPU, addr: Int) -> CPU {
-  // Return address should point to byte after JSR instruction
-  let return_addr = cpu.program_counter
+  // Return address should point to byte before the next instruction (PC - 1)
+  // The 6502 pushes the address of the last byte of the JSR instruction (PC - 1)
+  let return_addr = cpu.program_counter - 1
 
   // Push high byte
   let hi = int.bitwise_shift_right(return_addr, 8)
@@ -32,15 +33,16 @@ pub fn jsr(cpu: CPU, addr: Int) -> CPU {
 
 // Return from Subroutine
 pub fn rts(cpu: CPU) -> CPU {
-  // Pull low byte from stack
+  // Pull program counter from stack (low byte first)
   case stack.pull(cpu) {
     Ok(#(cpu1, lo)) -> {
-      // Pull high byte from stack
+      // Then pull high byte
       case stack.pull(cpu1) {
         Ok(#(cpu2, hi)) -> {
-          // Reconstruct address and add 1
-          let addr = int.bitwise_or(int.bitwise_shift_left(hi, 8), lo) + 1
-          types.CPU(..cpu2, program_counter: addr)
+          let addr = int.bitwise_or(int.bitwise_shift_left(hi, 8), lo)
+          // RTS increments PC by 1 after pulling from stack
+          // This is because JSR stored PC-1, so we need to add 1 to get back to the next instruction
+          types.CPU(..cpu2, program_counter: addr + 1)
         }
         Error(Nil) -> cpu1
       }
@@ -64,6 +66,7 @@ pub fn rti(cpu: CPU) -> CPU {
           case stack.pull(cpu2) {
             Ok(#(cpu3, hi)) -> {
               let addr = int.bitwise_or(int.bitwise_shift_left(hi, 8), lo)
+              // Unlike RTS, RTI does not need to add 1 to the address
               types.CPU(..cpu3, program_counter: addr)
             }
             Error(Nil) -> cpu2

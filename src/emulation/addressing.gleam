@@ -8,28 +8,29 @@ import gleam/int
 import gleam/result
 import iv
 
-// Helper to fetch a byte from program memory at PC
+// Fetches a byte from program memory at the CPU's program counter (PC)
+// and increments the PC.
 fn fetch_byte(cpu: CPU, program: iv.Array(Int)) -> #(CPU, Int) {
-  iv.get(program, cpu.program_counter)
-  |> result.map(fn(byte) {
-    let new_cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
-    #(new_cpu, byte)
-  })
-  |> result.unwrap(#(cpu, 0))
+  let result = iv.get(program, cpu.program_counter)
+
+  case result {
+    Ok(byte) -> {
+      let new_cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
+      #(new_cpu, byte)
+    }
+    Error(_) -> #(cpu, 0)
+  }
 }
 
-// Helper to fetch a 16-bit word from program memory at PC (little-endian)
+// Fetches a 16-bit word from program memory at the CPU's program counter (PC)
+// in little-endian format (low byte then high byte) and increments the PC twice.
 fn fetch_word(cpu: CPU, program: iv.Array(Int)) -> #(CPU, Int) {
-  case fetch_byte(cpu, program) {
-    #(cpu_after_lo, lo) -> {
-      case fetch_byte(cpu_after_lo, program) {
-        #(cpu_after_hi, hi) -> {
-          let word = int.bitwise_or(int.bitwise_shift_left(hi, 8), lo)
-          #(cpu_after_hi, word)
-        }
-      }
-    }
-  }
+  let #(cpu_after_lo, lo) = fetch_byte(cpu, program)
+  let #(cpu_after_hi, hi) = fetch_byte(cpu_after_lo, program)
+
+  // Combine bytes into 16-bit word (little-endian)
+  let word = int.bitwise_or(int.bitwise_shift_left(hi, 8), lo)
+  #(cpu_after_hi, word)
 }
 
 // Get the operand address based on the addressing mode
@@ -47,7 +48,11 @@ pub fn get_operand_address(
 
     ZeroPage -> {
       case fetch_byte(cpu, program) {
-        #(new_cpu, addr) -> #(new_cpu, addr)
+        #(new_cpu, addr) -> {
+          // Ensure the address is in zero page (0x00-0xFF)
+          let zero_page_addr = int.bitwise_and(addr, 0xFF)
+          #(new_cpu, zero_page_addr)
+        }
       }
     }
 

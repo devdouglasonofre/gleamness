@@ -4,7 +4,6 @@ import emulation/screen.{type ScreenState}
 import emulation/types.{type CPU}
 import gleam/dynamic/decode.{type Dynamic}
 import gleam/int
-import gleam/io
 import gleam/option.{type Option}
 import iv
 import lustre
@@ -12,7 +11,6 @@ import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/event
 
 // FFI imports
 @external(javascript, "./ffi.mjs", "every")
@@ -40,6 +38,9 @@ fn do_update_texture_with_frame(
   width: Int,
   height: Int,
 ) -> Nil
+
+@external(javascript, "./ffi.mjs", "window_add_event_listener")
+fn window_add_event_listener(name: String, handler: fn(Dynamic) -> a) -> Nil
 
 fn every(interval: Int, tick: Msg) -> Effect(Msg) {
   effect.from(fn(dispatch) { do_every(interval, fn() { dispatch(tick) }) })
@@ -76,7 +77,8 @@ pub type Model {
 
 // Messages for our update function
 pub type Msg {
-  Tick
+  CpuTick
+  ScreenTick
   KeyDown(String)
   KeyUp(String)
   ContextReady(Dynamic)
@@ -129,12 +131,16 @@ pub fn init(_flags: Nil) -> #(Model, effect.Effect(Msg)) {
       window_height: 32,
       scale: 10,
       key_pressed: iv.from_list([]),
-      // Empty iv array instead of empty list
       canvas_ctx: option.None,
       texture: option.None,
       screen_state: screen.new_screen_state(),
     ),
-    effect.batch([every(16, Tick), render_effect(Mounted)]),
+    // Run CPU instructions every 1ms, and update screen every 16ms (60fps)
+    effect.batch([
+      every(1, CpuTick),
+      every(16, ScreenTick),
+      render_effect(Mounted),
+    ]),
   )
 }
 
@@ -142,7 +148,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   case msg {
     Mounted -> #(model, init_canvas())
 
-    Tick -> {
+    CpuTick -> {
+      // Execute multiple CPU instructions per tick
       // First write a random number to memory location 0xFE
       // The snake game expects a number between 1 and 16
       let random_value = int.bitwise_and(int.random(20), 0x0F) + 1
@@ -151,20 +158,17 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
         Error(_) -> model.cpu
       }
 
-      // Then run the CPU cycle
-      let new_cpu =
-        cpu.run(new_cpu, fn(cur_cpu) {
-          let assert Ok(sliced_vram) =
-            iv.slice(new_cpu.bus.cpu_vram, 0x0200, 0x0600)
-          // io.debug(iv.to_list(sliced_vram))
-          io.debug(new_cpu.program_counter)
-          cur_cpu
-        })
+      // Run multiple CPU cycles (e.g., 100 instructions per tick)
+      let new_cpu = do_cpu_cycles(new_cpu, 100)
+      #(Model(..model, cpu: new_cpu), effect.none())
+    }
 
+    ScreenTick -> {
+      // Handle screen refresh separately from CPU execution
       case model.canvas_ctx, model.texture {
         option.Some(ctx), option.Some(texture) -> {
           let new_screen_state =
-            screen.read_screen_state(new_cpu, model.screen_state)
+            screen.read_screen_state(model.cpu, model.screen_state)
 
           case new_screen_state.changed {
             True -> {
@@ -179,12 +183,9 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
             False -> Nil
           }
 
-          #(
-            Model(..model, cpu: new_cpu, screen_state: new_screen_state),
-            effect.none(),
-          )
+          #(Model(..model, screen_state: new_screen_state), effect.none())
         }
-        _, _ -> #(Model(..model, cpu: new_cpu), effect.none())
+        _, _ -> #(model, effect.none())
       }
     }
 
@@ -243,22 +244,53 @@ pub fn update(model: Model, msg: Msg) -> #(Model, effect.Effect(Msg)) {
   }
 }
 
+// Helper function to run multiple CPU cycles
+fn do_cpu_cycles(initial_cpu: CPU, count: Int) -> CPU {
+  case count {
+    0 -> initial_cpu
+    n -> {
+      let next_cpu = cpu.run(initial_cpu, fn(cur_cpu) { cur_cpu })
+      do_cpu_cycles(next_cpu, n - 1)
+    }
+  }
+}
+
+pub fn handle_key_event(event: Dynamic, dispatch: fn(Msg) -> Nil) -> Nil {
+  let key_result = dynamic.field("key", dynamic.string)(event)
+  case key_result {
+    Ok(key) -> {
+      case dynamic.field("type", dynamic.string)(event) {
+        Ok("keydown") -> dispatch(KeyDown(key))
+        Ok("keyup") -> dispatch(KeyUp(key))
+        _ -> Nil
+      }
+      Nil
+    }
+    _ -> Nil
+  }
+}
+
 pub fn view(model: Model) -> Element(Msg) {
   let width = model.window_width * model.scale
   let height = model.window_height * model.scale
 
-  html.div(
-    [
-      event.on_keydown(KeyDown),
-      event.on_keyup(KeyUp),
-      attribute.style([#("outline", "none")]),
-    ],
-    [html.canvas([attribute.width(width), attribute.height(height)])],
-  )
+  html.div([attribute.style([#("outline", "none")])], [
+    html.canvas([attribute.width(width), attribute.height(height)]),
+  ])
 }
 
 pub fn main() {
   let app = lustre.application(init, update, view)
-  let assert Ok(_) = lustre.start(app, "#app", Nil)
+  let assert Ok(to_runtime) = lustre.start(app, "#app", Nil)
+
+  // Add window-level keyboard event listeners
+  window_add_event_listener("keydown", fn(event) {
+    handle_key_event(event, fn(msg) { lustre.dispatch(msg) |> to_runtime })
+  })
+
+  window_add_event_listener("keyup", fn(event) {
+    handle_key_event(event, fn(msg) { lustre.dispatch(msg) |> to_runtime })
+  })
+
   Nil
 }

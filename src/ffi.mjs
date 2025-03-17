@@ -50,3 +50,7 @@ export function updateTextureWithFrame(texture, frameData, width, height) {
     }
   }
 }
+
+export function window_add_event_listener(name, handler) {
+  window.addEventListener(name, handler);
+}

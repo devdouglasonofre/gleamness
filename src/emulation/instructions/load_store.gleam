@@ -1,6 +1,7 @@
 import emulation/flags
 import emulation/memory
 import emulation/types.{type CPU, flag_negative, flag_zero}
+import gleam/io
 import iv
 
 // Load Accumulator with a value
