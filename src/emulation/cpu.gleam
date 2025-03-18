@@ -1,4 +1,5 @@
 import emulation/addressing
+import emulation/bus
 import emulation/helpers/instruction_helpers
 import emulation/instructions/arithmetic
 import emulation/instructions/branch
@@ -13,6 +14,8 @@ import emulation/memory
 import emulation/types.{
   type CPU, type CpuInstruction, Bus, flag_unused, stack_reset,
 }
+import gleam/io
+import gleam/option.{None}
 import iv
 
 // Initialize a new CPU with default state
@@ -29,7 +32,22 @@ pub fn get_new_cpu() -> CPU {
     program_counter: 0,
     stack_pointer: stack_reset,
     memory: memory.init_memory(),
-    bus: Bus(iv.repeat(0, 0x2000)),
+    bus: Bus(cpu_vram: iv.repeat(0, 0x2000), rom: None),
+  )
+}
+
+// Initialize a new CPU with a ROM
+pub fn get_new_cpu_with_rom(rom: types.Rom) -> CPU {
+  // Initialize CPU with ROM
+  types.CPU(
+    register_a: 0,
+    register_x: 0,
+    register_y: 0,
+    status: flag_unused,
+    program_counter: 0,
+    stack_pointer: stack_reset,
+    memory: memory.init_memory(),
+    bus: bus.new_with_rom(rom),
   )
 }
 
@@ -77,9 +95,11 @@ pub fn reset(cpu: CPU) -> Result(CPU, Nil) {
 
 // Load a program into memory at the ROM address
 pub fn load(cpu: CPU, program: iv.Array(Int)) -> Result(CPU, Nil) {
-  case load_at_address(cpu, program, 0x0600) {
+  // Load program directly into memory at PRG_ROM_START (0x8000)
+  case load_at_address(cpu, program, bus.prg_rom_start) {
     Ok(cpu_with_program) -> {
-      memory.write_u16(cpu_with_program, 0xFFFC, 0x0600)
+      // Point reset vector to ROM start
+      memory.write_u16(cpu_with_program, 0xFFFC, bus.prg_rom_start)
     }
     Error(Nil) -> {
       Error(Nil)
@@ -113,7 +133,8 @@ pub fn run(cpu: CPU, callback: fn(CPU) -> CPU) -> CPU {
   // Execute callback before processing the instruction
   let cpu = callback(cpu)
 
-  case iv.get(cpu.bus.cpu_vram, cpu.program_counter) {
+  // Read from bus memory instead of cpu_vram directly
+  case bus.mem_read(cpu.bus, cpu.program_counter) {
     Error(_) -> cpu
     Ok(opcode) -> {
       // Get instruction metadata
@@ -127,15 +148,10 @@ pub fn run(cpu: CPU, callback: fn(CPU) -> CPU) -> CPU {
           let cpu = types.CPU(..cpu, program_counter: cpu.program_counter + 1)
 
           let #(cpu_after_fetch, operand_addr) =
-            addressing.get_operand_address(
-              cpu,
-              cpu.bus.cpu_vram,
-              instr.addressing_mode,
-            )
+            addressing.get_operand_address(cpu, instr.addressing_mode)
           let operand_value =
             addressing.get_operand_value(
               cpu_after_fetch,
-              cpu.bus.cpu_vram,
               instr.addressing_mode,
               operand_addr,
             )
@@ -149,7 +165,10 @@ pub fn run(cpu: CPU, callback: fn(CPU) -> CPU) -> CPU {
         }
 
         // Unknown opcode
-        Error(_) -> cpu
+        Error(_) -> {
+          // Probably NOP. We won't handle unofficial OP codes for now
+          types.CPU(..cpu, program_counter: cpu.program_counter + 1)
+        }
       }
     }
   }

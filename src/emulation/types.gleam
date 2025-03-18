@@ -1,3 +1,4 @@
+import gleam/option.{type Option}
 import iv
 
 pub type CPU {
@@ -14,7 +15,7 @@ pub type CPU {
 }
 
 pub type Bus {
-  Bus(cpu_vram: iv.Array(Int))
+  Bus(cpu_vram: iv.Array(Int), rom: Option(Rom))
 }
 
 pub type CpuInstruction {

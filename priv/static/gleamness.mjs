@@ -38,12 +38,12 @@ var List = class {
   // @internal
   countLength() {
     let current = this;
-    let length4 = 0;
+    let length5 = 0;
     while (current) {
       current = current.tail;
-      length4++;
+      length5++;
     }
-    return length4 - 1;
+    return length5 - 1;
   }
 };
 function prepend(element2, tail) {
@@ -158,11 +158,11 @@ var BitArray = class {
    * @param {number} index
    * @returns {number | undefined}
    */
-  byteAt(index3) {
-    if (index3 < 0 || index3 >= this.byteSize) {
+  byteAt(index4) {
+    if (index4 < 0 || index4 >= this.byteSize) {
       return void 0;
     }
-    return bitArrayByteAt(this.rawBuffer, this.bitOffset, index3);
+    return bitArrayByteAt(this.rawBuffer, this.bitOffset, index4);
   }
   /** @internal */
   equals(other) {
@@ -250,12 +250,12 @@ var BitArray = class {
     return this.rawBuffer.length;
   }
 };
-function bitArrayByteAt(buffer, bitOffset, index3) {
+function bitArrayByteAt(buffer, bitOffset, index4) {
   if (bitOffset === 0) {
-    return buffer[index3] ?? 0;
+    return buffer[index4] ?? 0;
   } else {
-    const a = buffer[index3] << bitOffset & 255;
-    const b = buffer[index3 + 1] >> 8 - bitOffset;
+    const a = buffer[index4] << bitOffset & 255;
+    const b = buffer[index4 + 1] >> 8 - bitOffset;
     return a | b;
   }
 }
@@ -361,6 +361,13 @@ function structurallyCompatibleObjects(a, b) {
     return false;
   return a.constructor === b.constructor;
 }
+function remainderInt(a, b) {
+  if (b === 0) {
+    return 0;
+  } else {
+    return a % b;
+  }
+}
 function makeError(variant, module, line, fn, message, extra) {
   let error = new globalThis.Error(message);
   error.gleam_error = variant;
@@ -371,6 +378,22 @@ function makeError(variant, module, line, fn, message, extra) {
   for (let k in extra)
     error[k] = extra[k];
   return error;
+}
+
+// build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
+function reduceRight(thing, acc, fn) {
+  return thing.reduceRight(fn, acc);
+}
+
+// build/dev/javascript/gleam_javascript/gleam/javascript/array.mjs
+function to_list(items) {
+  return reduceRight(
+    items,
+    toList([]),
+    (list2, item) => {
+      return prepend(item, list2);
+    }
+  );
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
@@ -389,6 +412,269 @@ function to_result(option, e) {
   } else {
     return new Error(e);
   }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/float.mjs
+function negate(x) {
+  return -1 * x;
+}
+function round2(x) {
+  let $ = x >= 0;
+  if ($) {
+    return round(x);
+  } else {
+    return 0 - round(negate(x));
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/int.mjs
+function random(max) {
+  let _pipe = random_uniform() * identity(max);
+  let _pipe$1 = floor(_pipe);
+  return round2(_pipe$1);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/list.mjs
+function reverse_and_prepend(loop$prefix, loop$suffix) {
+  while (true) {
+    let prefix = loop$prefix;
+    let suffix = loop$suffix;
+    if (prefix.hasLength(0)) {
+      return suffix;
+    } else {
+      let first$1 = prefix.head;
+      let rest$1 = prefix.tail;
+      loop$prefix = rest$1;
+      loop$suffix = prepend(first$1, suffix);
+    }
+  }
+}
+function reverse(list2) {
+  return reverse_and_prepend(list2, toList([]));
+}
+function is_empty(list2) {
+  return isEqual(list2, toList([]));
+}
+function map_loop(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list2.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let first$1 = list2.head;
+      let rest$1 = list2.tail;
+      loop$list = rest$1;
+      loop$fun = fun;
+      loop$acc = prepend(fun(first$1), acc);
+    }
+  }
+}
+function map2(list2, fun) {
+  return map_loop(list2, fun, toList([]));
+}
+function append_loop(loop$first, loop$second) {
+  while (true) {
+    let first2 = loop$first;
+    let second = loop$second;
+    if (first2.hasLength(0)) {
+      return second;
+    } else {
+      let first$1 = first2.head;
+      let rest$1 = first2.tail;
+      loop$first = rest$1;
+      loop$second = prepend(first$1, second);
+    }
+  }
+}
+function append(first2, second) {
+  return append_loop(reverse(first2), second);
+}
+function prepend2(list2, item) {
+  return prepend(item, list2);
+}
+function fold(loop$list, loop$initial, loop$fun) {
+  while (true) {
+    let list2 = loop$list;
+    let initial = loop$initial;
+    let fun = loop$fun;
+    if (list2.hasLength(0)) {
+      return initial;
+    } else {
+      let first$1 = list2.head;
+      let rest$1 = list2.tail;
+      loop$list = rest$1;
+      loop$initial = fun(initial, first$1);
+      loop$fun = fun;
+    }
+  }
+}
+function index_fold_loop(loop$over, loop$acc, loop$with, loop$index) {
+  while (true) {
+    let over = loop$over;
+    let acc = loop$acc;
+    let with$ = loop$with;
+    let index4 = loop$index;
+    if (over.hasLength(0)) {
+      return acc;
+    } else {
+      let first$1 = over.head;
+      let rest$1 = over.tail;
+      loop$over = rest$1;
+      loop$acc = with$(acc, first$1, index4);
+      loop$with = with$;
+      loop$index = index4 + 1;
+    }
+  }
+}
+function index_fold(list2, initial, fun) {
+  return index_fold_loop(list2, initial, fun, 0);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/string.mjs
+function drop_start(loop$string, loop$num_graphemes) {
+  while (true) {
+    let string4 = loop$string;
+    let num_graphemes = loop$num_graphemes;
+    let $ = num_graphemes > 0;
+    if (!$) {
+      return string4;
+    } else {
+      let $1 = pop_grapheme(string4);
+      if ($1.isOk()) {
+        let string$1 = $1[0][1];
+        loop$string = string$1;
+        loop$num_graphemes = num_graphemes - 1;
+      } else {
+        return string4;
+      }
+    }
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map3(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(fun(x));
+  } else {
+    let e = result[0];
+    return new Error(e);
+  }
+}
+function map_error(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(x);
+  } else {
+    let error = result[0];
+    return new Error(fun(error));
+  }
+}
+function try$(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return fun(x);
+  } else {
+    let e = result[0];
+    return new Error(e);
+  }
+}
+function replace_error(result, error) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(x);
+  } else {
+    return new Error(error);
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/dynamic.mjs
+var DecodeError = class extends CustomType {
+  constructor(expected, found, path) {
+    super();
+    this.expected = expected;
+    this.found = found;
+    this.path = path;
+  }
+};
+function map_errors(result, f) {
+  return map_error(
+    result,
+    (_capture) => {
+      return map2(_capture, f);
+    }
+  );
+}
+function string(data) {
+  return decode_string(data);
+}
+function do_any(decoders) {
+  return (data) => {
+    if (decoders.hasLength(0)) {
+      return new Error(
+        toList([new DecodeError("another type", classify_dynamic(data), toList([]))])
+      );
+    } else {
+      let decoder = decoders.head;
+      let decoders$1 = decoders.tail;
+      let $ = decoder(data);
+      if ($.isOk()) {
+        let decoded = $[0];
+        return new Ok(decoded);
+      } else {
+        return do_any(decoders$1)(data);
+      }
+    }
+  };
+}
+function push_path(error, name) {
+  let name$1 = identity(name);
+  let decoder = do_any(
+    toList([
+      decode_string,
+      (x) => {
+        return map3(decode_int(x), to_string);
+      }
+    ])
+  );
+  let name$2 = (() => {
+    let $ = decoder(name$1);
+    if ($.isOk()) {
+      let name$22 = $[0];
+      return name$22;
+    } else {
+      let _pipe = toList(["<", classify_dynamic(name$1), ">"]);
+      let _pipe$1 = concat(_pipe);
+      return identity(_pipe$1);
+    }
+  })();
+  let _record = error;
+  return new DecodeError(
+    _record.expected,
+    _record.found,
+    prepend(name$2, error.path)
+  );
+}
+function field(name, inner_type) {
+  return (value) => {
+    let missing_field_error = new DecodeError("field", "nothing", toList([]));
+    return try$(
+      decode_field(value, name),
+      (maybe_inner) => {
+        let _pipe = maybe_inner;
+        let _pipe$1 = to_result(_pipe, toList([missing_field_error]));
+        let _pipe$2 = try$(_pipe$1, inner_type);
+        return map_errors(
+          _pipe$2,
+          (_capture) => {
+            return push_path(_capture, name);
+          }
+        );
+      }
+    );
+  };
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -524,7 +810,7 @@ function bitcount(x) {
   x += x >> 16;
   return x & 127;
 }
-function index(bitmap, bit2) {
+function index2(bitmap, bit2) {
   return bitcount(bitmap & bit2 - 1);
 }
 function cloneAndSet(arr, at, val) {
@@ -645,7 +931,7 @@ function assocArray(root, shift, hash, key, val, addedLeaf) {
 }
 function assocIndex(root, shift, hash, key, val, addedLeaf) {
   const bit2 = bitpos(hash, shift);
-  const idx = index(root.bitmap, bit2);
+  const idx = index2(root.bitmap, bit2);
   if ((root.bitmap & bit2) !== 0) {
     const node = root.array[idx];
     if (node.type !== ENTRY) {
@@ -792,7 +1078,7 @@ function findIndex(root, shift, hash, key) {
   if ((root.bitmap & bit2) === 0) {
     return void 0;
   }
-  const idx = index(root.bitmap, bit2);
+  const idx = index2(root.bitmap, bit2);
   const node = root.array[idx];
   if (node.type !== ENTRY) {
     return find(node, shift + SHIFT, hash, key);
@@ -885,7 +1171,7 @@ function withoutIndex(root, shift, hash, key) {
   if ((root.bitmap & bit2) === 0) {
     return root;
   }
-  const idx = index(root.bitmap, bit2);
+  const idx = index2(root.bitmap, bit2);
   const node = root.array[idx];
   if (node.type !== ENTRY) {
     const n = without(node, shift + SHIFT, hash, key);
@@ -1172,18 +1458,18 @@ function random_uniform() {
 function new_map() {
   return Dict.new();
 }
-function map_to_list(map5) {
-  return List.fromArray(map5.entries());
+function map_to_list(map6) {
+  return List.fromArray(map6.entries());
 }
-function map_get(map5, key) {
-  const value = map5.get(key, NOT_FOUND);
+function map_get(map6, key) {
+  const value = map6.get(key, NOT_FOUND);
   if (value === NOT_FOUND) {
     return new Error(Nil);
   }
   return new Ok(value);
 }
-function map_insert(key, value, map5) {
-  return map5.set(key, value);
+function map_insert(key, value, map6) {
+  return map6.set(key, value);
 }
 function classify_dynamic(data) {
   if (typeof data === "string") {
@@ -1263,26 +1549,6 @@ function bitwise_shift_right(x, y) {
   return Number(BigInt(x) >> BigInt(y));
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/float.mjs
-function negate(x) {
-  return -1 * x;
-}
-function round2(x) {
-  let $ = x >= 0;
-  if ($) {
-    return round(x);
-  } else {
-    return 0 - round(negate(x));
-  }
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/int.mjs
-function random(max) {
-  let _pipe = random_uniform() * identity(max);
-  let _pipe$1 = floor(_pipe);
-  return round2(_pipe$1);
-}
-
 // build/dev/javascript/gleam_stdlib/gleam/dict.mjs
 function insert(dict2, key, value) {
   return map_insert(key, value, dict2);
@@ -1319,257 +1585,6 @@ function keys(dict2) {
   return do_keys_loop(map_to_list(dict2), toList([]));
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/list.mjs
-function reverse_and_prepend(loop$prefix, loop$suffix) {
-  while (true) {
-    let prefix = loop$prefix;
-    let suffix = loop$suffix;
-    if (prefix.hasLength(0)) {
-      return suffix;
-    } else {
-      let first$1 = prefix.head;
-      let rest$1 = prefix.tail;
-      loop$prefix = rest$1;
-      loop$suffix = prepend(first$1, suffix);
-    }
-  }
-}
-function reverse(list2) {
-  return reverse_and_prepend(list2, toList([]));
-}
-function is_empty(list2) {
-  return isEqual(list2, toList([]));
-}
-function map_loop(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let first$1 = list2.head;
-      let rest$1 = list2.tail;
-      loop$list = rest$1;
-      loop$fun = fun;
-      loop$acc = prepend(fun(first$1), acc);
-    }
-  }
-}
-function map(list2, fun) {
-  return map_loop(list2, fun, toList([]));
-}
-function append_loop(loop$first, loop$second) {
-  while (true) {
-    let first2 = loop$first;
-    let second = loop$second;
-    if (first2.hasLength(0)) {
-      return second;
-    } else {
-      let first$1 = first2.head;
-      let rest$1 = first2.tail;
-      loop$first = rest$1;
-      loop$second = prepend(first$1, second);
-    }
-  }
-}
-function append(first2, second) {
-  return append_loop(reverse(first2), second);
-}
-function prepend2(list2, item) {
-  return prepend(item, list2);
-}
-function fold(loop$list, loop$initial, loop$fun) {
-  while (true) {
-    let list2 = loop$list;
-    let initial = loop$initial;
-    let fun = loop$fun;
-    if (list2.hasLength(0)) {
-      return initial;
-    } else {
-      let first$1 = list2.head;
-      let rest$1 = list2.tail;
-      loop$list = rest$1;
-      loop$initial = fun(initial, first$1);
-      loop$fun = fun;
-    }
-  }
-}
-function index_fold_loop(loop$over, loop$acc, loop$with, loop$index) {
-  while (true) {
-    let over = loop$over;
-    let acc = loop$acc;
-    let with$ = loop$with;
-    let index3 = loop$index;
-    if (over.hasLength(0)) {
-      return acc;
-    } else {
-      let first$1 = over.head;
-      let rest$1 = over.tail;
-      loop$over = rest$1;
-      loop$acc = with$(acc, first$1, index3);
-      loop$with = with$;
-      loop$index = index3 + 1;
-    }
-  }
-}
-function index_fold(list2, initial, fun) {
-  return index_fold_loop(list2, initial, fun, 0);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/string.mjs
-function drop_start(loop$string, loop$num_graphemes) {
-  while (true) {
-    let string4 = loop$string;
-    let num_graphemes = loop$num_graphemes;
-    let $ = num_graphemes > 0;
-    if (!$) {
-      return string4;
-    } else {
-      let $1 = pop_grapheme(string4);
-      if ($1.isOk()) {
-        let string$1 = $1[0][1];
-        loop$string = string$1;
-        loop$num_graphemes = num_graphemes - 1;
-      } else {
-        return string4;
-      }
-    }
-  }
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map2(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return new Ok(fun(x));
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
-function map_error(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return new Ok(x);
-  } else {
-    let error = result[0];
-    return new Error(fun(error));
-  }
-}
-function try$(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
-function unwrap(result, default$) {
-  if (result.isOk()) {
-    let v = result[0];
-    return v;
-  } else {
-    return default$;
-  }
-}
-function replace_error(result, error) {
-  if (result.isOk()) {
-    let x = result[0];
-    return new Ok(x);
-  } else {
-    return new Error(error);
-  }
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/dynamic.mjs
-var DecodeError = class extends CustomType {
-  constructor(expected, found, path) {
-    super();
-    this.expected = expected;
-    this.found = found;
-    this.path = path;
-  }
-};
-function map_errors(result, f) {
-  return map_error(
-    result,
-    (_capture) => {
-      return map(_capture, f);
-    }
-  );
-}
-function string(data) {
-  return decode_string(data);
-}
-function do_any(decoders) {
-  return (data) => {
-    if (decoders.hasLength(0)) {
-      return new Error(
-        toList([new DecodeError("another type", classify_dynamic(data), toList([]))])
-      );
-    } else {
-      let decoder = decoders.head;
-      let decoders$1 = decoders.tail;
-      let $ = decoder(data);
-      if ($.isOk()) {
-        let decoded = $[0];
-        return new Ok(decoded);
-      } else {
-        return do_any(decoders$1)(data);
-      }
-    }
-  };
-}
-function push_path(error, name) {
-  let name$1 = identity(name);
-  let decoder = do_any(
-    toList([
-      decode_string,
-      (x) => {
-        return map2(decode_int(x), to_string);
-      }
-    ])
-  );
-  let name$2 = (() => {
-    let $ = decoder(name$1);
-    if ($.isOk()) {
-      let name$22 = $[0];
-      return name$22;
-    } else {
-      let _pipe = toList(["<", classify_dynamic(name$1), ">"]);
-      let _pipe$1 = concat(_pipe);
-      return identity(_pipe$1);
-    }
-  })();
-  let _record = error;
-  return new DecodeError(
-    _record.expected,
-    _record.found,
-    prepend(name$2, error.path)
-  );
-}
-function field(name, inner_type) {
-  return (value) => {
-    let missing_field_error = new DecodeError("field", "nothing", toList([]));
-    return try$(
-      decode_field(value, name),
-      (maybe_inner) => {
-        let _pipe = maybe_inner;
-        let _pipe$1 = to_result(_pipe, toList([missing_field_error]));
-        let _pipe$2 = try$(_pipe$1, inner_type);
-        return map_errors(
-          _pipe$2,
-          (_capture) => {
-            return push_path(_capture, name);
-          }
-        );
-      }
-    );
-  };
-}
-
 // build/dev/javascript/iv/iv_ffi.mjs
 var empty = () => [];
 var singleton = (x) => [x];
@@ -1579,8 +1594,9 @@ var prepend3 = (xs, x) => [x, ...xs];
 var concat2 = (xs, ys) => [...xs, ...ys];
 var get1 = (idx, xs) => xs[idx - 1];
 var set1 = (idx, xs, x) => xs.with(idx - 1, x);
-var length2 = (xs) => xs.length;
-var map3 = (xs, f) => xs.map(f);
+var length3 = (xs) => xs.length;
+var split1 = (idx, xs) => [xs.slice(0, idx - 1), xs.slice(idx - 1)];
+var map4 = (xs, f) => xs.map(f);
 var bsl = (a, b) => a << b;
 var bsr = (a, b) => a >> b;
 
@@ -1605,11 +1621,11 @@ function fold_loop(loop$xs, loop$state, loop$idx, loop$len, loop$fun) {
   }
 }
 function fold3(xs, state, fun) {
-  let len = length2(xs);
+  let len = length3(xs);
   return fold_loop(xs, state, 1, len, fun);
 }
 function fold_skip_first(xs, state, fun) {
-  let len = length2(xs);
+  let len = length3(xs);
   return fold_loop(xs, state, 2, len, fun);
 }
 function fold_right_loop(loop$xs, loop$state, loop$idx, loop$fun) {
@@ -1630,7 +1646,7 @@ function fold_right_loop(loop$xs, loop$state, loop$idx, loop$fun) {
   }
 }
 function fold_right(xs, state, fun) {
-  let len = length2(xs);
+  let len = length3(xs);
   return fold_right_loop(xs, state, len, fun);
 }
 function find_map_loop(loop$xs, loop$idx, loop$len, loop$fun) {
@@ -1658,7 +1674,7 @@ function find_map_loop(loop$xs, loop$idx, loop$len, loop$fun) {
   }
 }
 function find_map(xs, fun) {
-  let len = length2(xs);
+  let len = length3(xs);
   return find_map_loop(xs, 1, len, fun);
 }
 
@@ -1712,16 +1728,25 @@ var NoFreeSlot = class extends CustomType {
     this.right = right;
   }
 };
+var Split = class extends CustomType {
+  constructor(prefix, suffix) {
+    super();
+    this.prefix = prefix;
+    this.suffix = suffix;
+  }
+};
+var EmptyPrefix = class extends CustomType {
+};
 function node_size(node) {
   if (node instanceof Balanced) {
     let size = node.size;
     return size;
   } else if (node instanceof Leaf) {
     let children2 = node.children;
-    return length2(children2);
+    return length3(children2);
   } else {
     let sizes = node.sizes;
-    return get1(length2(sizes), sizes);
+    return get1(length3(sizes), sizes);
   }
 }
 function compute_sizes(nodes) {
@@ -1730,7 +1755,7 @@ function compute_sizes(nodes) {
     nodes,
     singleton(first_size),
     (sizes, node) => {
-      let size = get1(length2(sizes), sizes) + node_size(node);
+      let size = get1(length3(sizes), sizes) + node_size(node);
       return append4(sizes, size);
     }
   );
@@ -1745,7 +1770,7 @@ function wrap(item) {
 function builder_new() {
   return new Builder(toList([]), empty());
 }
-function length3(array4) {
+function length4(array4) {
   if (array4 instanceof Empty2) {
     return 0;
   } else {
@@ -1757,14 +1782,14 @@ function find_size(loop$sizes, loop$size_idx_plus_one, loop$index) {
   while (true) {
     let sizes = loop$sizes;
     let size_idx_plus_one = loop$size_idx_plus_one;
-    let index3 = loop$index;
-    let $ = get1(size_idx_plus_one, sizes) > index3;
+    let index4 = loop$index;
+    let $ = get1(size_idx_plus_one, sizes) > index4;
     if ($) {
       return size_idx_plus_one - 1;
     } else {
       loop$sizes = sizes;
       loop$size_idx_plus_one = size_idx_plus_one + 1;
-      loop$index = index3;
+      loop$index = index4;
     }
   }
 }
@@ -1875,18 +1900,18 @@ function fold_right2(array4, state, fun) {
     return fold_right_node(root, state, fun);
   }
 }
-function to_list(array4) {
+function to_list2(array4) {
   return fold_right2(array4, toList([]), prepend2);
 }
 function balanced(shift, nodes) {
-  let len = length2(nodes);
+  let len = length3(nodes);
   let last_child = get1(len, nodes);
   let max_size = bsl(1, shift);
   let size = max_size * (len - 1) + node_size(last_child);
   return new Balanced(size, nodes);
 }
 function branch(shift, nodes) {
-  let len = length2(nodes);
+  let len = length3(nodes);
   let max_size = bsl(1, shift);
   let sizes = compute_sizes(nodes);
   let prefix_size = (() => {
@@ -1906,7 +1931,7 @@ function branch(shift, nodes) {
 }
 var branch_bits = 5;
 function array(shift, nodes) {
-  let $ = length2(nodes);
+  let $ = length3(nodes);
   if ($ === 0) {
     return new Empty2();
   } else if ($ === 1) {
@@ -1920,11 +1945,11 @@ function get_from_node(loop$node, loop$shift, loop$index) {
   while (true) {
     let node = loop$node;
     let shift = loop$shift;
-    let index3 = loop$index;
+    let index4 = loop$index;
     if (node instanceof Balanced) {
       let children2 = node.children;
-      let node_index = bsr(index3, shift);
-      let index$1 = index3 - bsl(node_index, shift);
+      let node_index = bsr(index4, shift);
+      let index$1 = index4 - bsl(node_index, shift);
       let child = get1(node_index + 1, children2);
       loop$node = child;
       loop$shift = shift - branch_bits;
@@ -1932,13 +1957,13 @@ function get_from_node(loop$node, loop$shift, loop$index) {
     } else if (node instanceof Unbalanced) {
       let sizes = node.sizes;
       let children2 = node.children;
-      let start_search_index = bsr(index3, shift);
-      let node_index = find_size(sizes, start_search_index + 1, index3);
+      let start_search_index = bsr(index4, shift);
+      let node_index = find_size(sizes, start_search_index + 1, index4);
       let index$1 = (() => {
         if (node_index === 0) {
-          return index3;
+          return index4;
         } else {
-          return index3 - get1(node_index, sizes);
+          return index4 - get1(node_index, sizes);
         }
       })();
       let child = get1(node_index + 1, children2);
@@ -1947,17 +1972,17 @@ function get_from_node(loop$node, loop$shift, loop$index) {
       loop$index = index$1;
     } else {
       let children2 = node.children;
-      return get1(index3 + 1, children2);
+      return get1(index4 + 1, children2);
     }
   }
 }
-function get(array4, index3) {
+function get(array4, index4) {
   if (array4 instanceof Array2) {
     let shift = array4.shift;
     let root = array4.root;
-    let $ = 0 <= index3 && index3 < node_size(root);
+    let $ = 0 <= index4 && index4 < node_size(root);
     if ($) {
-      return new Ok(get_from_node(root, shift, index3));
+      return new Ok(get_from_node(root, shift, index4));
     } else {
       return new Error(void 0);
     }
@@ -1965,12 +1990,12 @@ function get(array4, index3) {
     return new Error(void 0);
   }
 }
-function update_node(shift, node, index3, fun) {
+function update_node(shift, node, index4, fun) {
   if (node instanceof Balanced) {
     let size = node.size;
     let children2 = node.children;
-    let node_index = bsr(index3, shift);
-    let index$1 = index3 - bsl(node_index, shift);
+    let node_index = bsr(index4, shift);
+    let index$1 = index4 - bsl(node_index, shift);
     let new_children = (() => {
       let _pipe = get1(node_index + 1, children2);
       let _pipe$1 = ((_capture) => {
@@ -1984,13 +2009,13 @@ function update_node(shift, node, index3, fun) {
   } else if (node instanceof Unbalanced) {
     let sizes = node.sizes;
     let children2 = node.children;
-    let start_search_index = bsr(index3, shift);
-    let node_index = find_size(sizes, start_search_index + 1, index3);
+    let start_search_index = bsr(index4, shift);
+    let node_index = find_size(sizes, start_search_index + 1, index4);
     let index$1 = (() => {
       if (node_index === 0) {
-        return index3;
+        return index4;
       } else {
-        return index3 - get1(node_index, sizes);
+        return index4 - get1(node_index, sizes);
       }
     })();
     let new_children = (() => {
@@ -2006,20 +2031,39 @@ function update_node(shift, node, index3, fun) {
   } else {
     let children2 = node.children;
     let new_children = set1(
-      index3 + 1,
+      index4 + 1,
       children2,
-      fun(get1(index3 + 1, children2))
+      fun(get1(index4 + 1, children2))
     );
     return new Leaf(new_children);
   }
 }
-function try_update(array4, index3, fun) {
+function update(array4, index4, fun) {
   if (array4 instanceof Array2) {
     let shift = array4.shift;
     let root = array4.root;
-    let $ = 0 <= index3 && index3 < node_size(root);
+    let $ = 0 <= index4 && index4 < node_size(root);
     if ($) {
-      return new Array2(shift, update_node(shift, root, index3, fun));
+      return new Ok(new Array2(shift, update_node(shift, root, index4, fun)));
+    } else {
+      return new Error(void 0);
+    }
+  } else {
+    return new Error(void 0);
+  }
+}
+function set(array4, index4, item) {
+  return update(array4, index4, (_) => {
+    return item;
+  });
+}
+function try_update(array4, index4, fun) {
+  if (array4 instanceof Array2) {
+    let shift = array4.shift;
+    let root = array4.root;
+    let $ = 0 <= index4 && index4 < node_size(root);
+    if ($) {
+      return new Array2(shift, update_node(shift, root, index4, fun));
     } else {
       return array4;
     }
@@ -2027,10 +2071,171 @@ function try_update(array4, index3, fun) {
     return array4;
   }
 }
-function try_set(array4, index3, item) {
-  return try_update(array4, index3, (_) => {
+function try_set(array4, index4, item) {
+  return try_update(array4, index4, (_) => {
     return item;
   });
+}
+function split_node(shift, node, index4) {
+  if (node instanceof Balanced) {
+    let children2 = node.children;
+    let node_index = bsr(index4, shift);
+    let index$1 = index4 - bsl(node_index, shift);
+    let child = get1(node_index + 1, children2);
+    let child_shift = shift - branch_bits;
+    let $ = split_node(child_shift, child, index$1);
+    if ($ instanceof EmptyPrefix && node_index === 0) {
+      return new EmptyPrefix();
+    } else if ($ instanceof EmptyPrefix) {
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let prefix = balanced(shift, before_children);
+      let suffix = balanced(shift, after_children);
+      return new Split(prefix, suffix);
+    } else {
+      let prefix = $.prefix;
+      let suffix = $.suffix;
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let prefix$1 = balanced(shift, append4(before_children, prefix));
+      let suffix$1 = unbalanced(shift, set1(1, after_children, suffix));
+      return new Split(prefix$1, suffix$1);
+    }
+  } else if (node instanceof Unbalanced) {
+    let sizes = node.sizes;
+    let children2 = node.children;
+    let start_search_index = bsr(index4, shift);
+    let node_index = find_size(sizes, start_search_index + 1, index4);
+    let index$1 = (() => {
+      if (node_index === 0) {
+        return index4;
+      } else {
+        return index4 - get1(node_index, sizes);
+      }
+    })();
+    let child = get1(node_index + 1, children2);
+    let child_shift = shift - branch_bits;
+    let $ = split_node(child_shift, child, index$1);
+    if ($ instanceof EmptyPrefix && node_index === 0) {
+      return new EmptyPrefix();
+    } else if ($ instanceof EmptyPrefix) {
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let $2 = split1(node_index + 1, sizes);
+      let before_sizes = $2[0];
+      let after_sizes = $2[1];
+      let before_size = get1(node_index, before_sizes);
+      let after_sizes$1 = map4(
+        after_sizes,
+        (s) => {
+          return s - before_size;
+        }
+      );
+      let prefix = new Unbalanced(before_sizes, before_children);
+      let suffix = new Unbalanced(after_sizes$1, after_children);
+      return new Split(prefix, suffix);
+    } else {
+      let prefix = $.prefix;
+      let suffix = $.suffix;
+      let $1 = split1(node_index + 1, children2);
+      let before_children = $1[0];
+      let after_children = $1[1];
+      let $2 = split1(node_index + 1, sizes);
+      let before_sizes = $2[0];
+      let after_sizes = $2[1];
+      let before_children$1 = append4(before_children, prefix);
+      let before_size = (() => {
+        if (node_index === 0) {
+          return 0;
+        } else {
+          return get1(node_index, before_sizes);
+        }
+      })();
+      let before_sizes$1 = append4(
+        before_sizes,
+        before_size + node_size(prefix)
+      );
+      let after_children$1 = set1(1, after_children, suffix);
+      let after_delta = node_size(suffix) - get1(1, after_sizes);
+      let after_sizes$1 = map4(
+        after_sizes,
+        (s) => {
+          return s + after_delta;
+        }
+      );
+      let prefix$1 = new Unbalanced(before_sizes$1, before_children$1);
+      let suffix$1 = new Unbalanced(after_sizes$1, after_children$1);
+      return new Split(prefix$1, suffix$1);
+    }
+  } else {
+    let children2 = node.children;
+    if (index4 === 0) {
+      return new EmptyPrefix();
+    } else {
+      let $ = split1(index4 + 1, children2);
+      let before = $[0];
+      let after = $[1];
+      return new Split(new Leaf(before), new Leaf(after));
+    }
+  }
+}
+function split2(array4, index4) {
+  if (array4 instanceof Empty2) {
+    return [new Empty2(), new Empty2()];
+  } else if (index4 <= 0) {
+    return [new Empty2(), array4];
+  } else {
+    let shift = array4.shift;
+    let root = array4.root;
+    let $ = node_size(root);
+    if (index4 >= $) {
+      let length$1 = $;
+      return [array4, new Empty2()];
+    } else {
+      let $1 = split_node(shift, root, index4);
+      if ($1 instanceof Split) {
+        let prefix = $1.prefix;
+        let suffix = $1.suffix;
+        return [new Array2(shift, prefix), new Array2(shift, suffix)];
+      } else {
+        return [new Empty2(), array4];
+      }
+    }
+  }
+}
+function drop_first(array4, n) {
+  let $ = split2(array4, n);
+  let result = $[1];
+  return result;
+}
+function take_first(array4, n) {
+  let $ = split2(array4, n);
+  let result = $[0];
+  return result;
+}
+function slice(array4, start3, size) {
+  if (array4 instanceof Empty2 && size === 0) {
+    return new Ok(new Empty2());
+  } else if (array4 instanceof Empty2) {
+    return new Error(void 0);
+  } else {
+    let root = array4.root;
+    let $ = 0 <= start3 && start3 + size <= node_size(root);
+    if ($) {
+      return new Ok(
+        (() => {
+          let _pipe = array4;
+          let _pipe$1 = drop_first(_pipe, start3);
+          return take_first(_pipe$1, size);
+        })()
+      );
+    } else {
+      return new Error(void 0);
+    }
+  }
 }
 var branch_factor = 32;
 function push_node(nodes, node, shift) {
@@ -2039,7 +2244,7 @@ function push_node(nodes, node, shift) {
   } else {
     let nodes$1 = nodes.head;
     let rest$1 = nodes.tail;
-    let $ = length2(nodes$1) < branch_factor;
+    let $ = length3(nodes$1) < branch_factor;
     if ($) {
       return prepend(append4(nodes$1, node), rest$1);
     } else {
@@ -2055,7 +2260,7 @@ function push_node(nodes, node, shift) {
 function builder_append(builder, item) {
   let nodes = builder.nodes;
   let items = builder.items;
-  let $ = length2(items) === branch_factor;
+  let $ = length3(items) === branch_factor;
   if ($) {
     let leaf = new Leaf(items);
     return new Builder(push_node(nodes, leaf, 0), singleton(item));
@@ -2084,7 +2289,7 @@ function compress_nodes(loop$nodes, loop$shift) {
 function builder_to_array(builder) {
   let nodes = builder.nodes;
   let items = builder.items;
-  let items_len = length2(items);
+  let items_len = length3(items);
   let $ = items_len === 0 && is_empty(nodes);
   if ($) {
     return new Empty2();
@@ -2108,13 +2313,13 @@ function from_list2(list2) {
 function initialise_loop(loop$idx, loop$length, loop$builder, loop$fun) {
   while (true) {
     let idx = loop$idx;
-    let length4 = loop$length;
+    let length5 = loop$length;
     let builder = loop$builder;
     let fun = loop$fun;
-    let $ = idx < length4;
+    let $ = idx < length5;
     if ($) {
       loop$idx = idx + 1;
-      loop$length = length4;
+      loop$length = length5;
       loop$builder = builder_append(builder, fun(idx));
       loop$fun = fun;
     } else {
@@ -2122,8 +2327,8 @@ function initialise_loop(loop$idx, loop$length, loop$builder, loop$fun) {
     }
   }
 }
-function initialise(length4, fun) {
-  return initialise_loop(0, length4, builder_new(), fun);
+function initialise(length5, fun) {
+  return initialise_loop(0, length5, builder_new(), fun);
 }
 function repeat2(item, times) {
   return initialise(times, (_) => {
@@ -2159,7 +2364,7 @@ function filter(array4, predicate) {
   );
 }
 function direct_append_balanced(left_shift, left, left_children, right_shift, right) {
-  let left_len = length2(left_children);
+  let left_len = length3(left_children);
   let left_last = get1(left_len, left_children);
   let $ = direct_concat_node(
     left_shift - branch_bits,
@@ -2217,7 +2422,7 @@ function direct_concat_node(left_shift, left, right_shift, right) {
   } else if (left instanceof Leaf && right instanceof Leaf) {
     let cl = left.children;
     let cr = right.children;
-    let $ = length2(cl) + length2(cr) <= branch_factor;
+    let $ = length3(cl) + length3(cr) <= branch_factor;
     if ($) {
       return new Concatenated(new Leaf(concat2(cl, cr)));
     } else {
@@ -2254,10 +2459,10 @@ function direct_concat_node(left_shift, left, right_shift, right) {
   } else if (left instanceof Balanced && right instanceof Balanced) {
     let cl = left.children;
     let cr = right.children;
-    let $ = length2(cl) + length2(cr) <= branch_factor;
+    let $ = length3(cl) + length3(cr) <= branch_factor;
     if ($) {
       let merged = concat2(cl, cr);
-      let left_last = get1(length2(cl), cl);
+      let left_last = get1(length3(cl), cl);
       let $1 = node_size(left_last) === bsl(1, left_shift);
       if ($1) {
         return new Concatenated(balanced(left_shift, merged));
@@ -2270,7 +2475,7 @@ function direct_concat_node(left_shift, left, right_shift, right) {
   } else if (left instanceof Balanced && right instanceof Unbalanced) {
     let cl = left.children;
     let cr = right.children;
-    let $ = length2(cl) + length2(cr) <= branch_factor;
+    let $ = length3(cl) + length3(cr) <= branch_factor;
     if ($) {
       let merged = concat2(cl, cr);
       return new Concatenated(unbalanced(left_shift, merged));
@@ -2280,7 +2485,7 @@ function direct_concat_node(left_shift, left, right_shift, right) {
   } else if (left instanceof Unbalanced && right instanceof Balanced) {
     let cl = left.children;
     let cr = right.children;
-    let $ = length2(cl) + length2(cr) <= branch_factor;
+    let $ = length3(cl) + length3(cr) <= branch_factor;
     if ($) {
       let merged = concat2(cl, cr);
       return new Concatenated(unbalanced(left_shift, merged));
@@ -2290,7 +2495,7 @@ function direct_concat_node(left_shift, left, right_shift, right) {
   } else {
     let cl = left.children;
     let cr = right.children;
-    let $ = length2(cl) + length2(cr) <= branch_factor;
+    let $ = length3(cl) + length3(cr) <= branch_factor;
     if ($) {
       let merged = concat2(cl, cr);
       return new Concatenated(unbalanced(left_shift, merged));
@@ -2332,7 +2537,7 @@ function prepend4(array4, item) {
   return direct_concat(wrap(item), array4);
 }
 function direct_append_unbalanced(left_shift, left, left_children, sizes, right_shift, right) {
-  let left_len = length2(left_children);
+  let left_len = length3(left_children);
   let left_last = get1(left_len, left_children);
   let $ = direct_concat_node(
     left_shift - branch_bits,
@@ -2360,7 +2565,7 @@ function direct_append_unbalanced(left_shift, left, left_children, sizes, right_
   }
 }
 function direct_prepend_balanced(left_shift, left, right_shift, right, right_children) {
-  let right_len = length2(right_children);
+  let right_len = length3(right_children);
   let right_first = get1(1, right_children);
   let $ = direct_concat_node(
     left_shift,
@@ -2382,7 +2587,7 @@ function direct_prepend_balanced(left_shift, left, right_shift, right, right_chi
   }
 }
 function direct_prepend_unbalanced(left_shift, left, right_shift, right, right_children, sizes) {
-  let right_len = length2(right_children);
+  let right_len = length3(right_children);
   let right_first = get1(1, right_children);
   let $ = direct_concat_node(
     left_shift,
@@ -2394,7 +2599,7 @@ function direct_prepend_unbalanced(left_shift, left, right_shift, right, right_c
     let updated = $.merged;
     let children2 = set1(1, right_children, updated);
     let size_delta = node_size(updated) - node_size(right_first);
-    let sizes$1 = map3(sizes, (s) => {
+    let sizes$1 = map4(sizes, (s) => {
       return s + size_delta;
     });
     return new Concatenated(new Unbalanced(sizes$1, children2));
@@ -2404,7 +2609,7 @@ function direct_prepend_unbalanced(left_shift, left, right_shift, right, right_c
     let size = node_size(node);
     let sizes$1 = (() => {
       let _pipe = sizes;
-      let _pipe$1 = map3(_pipe, (s) => {
+      let _pipe$1 = map4(_pipe, (s) => {
         return s + size;
       });
       return prepend3(_pipe$1, size);
@@ -2509,8 +2714,8 @@ function do_element_list_handlers(elements2, handlers2, key) {
   return index_fold(
     elements2,
     handlers2,
-    (handlers3, element2, index3) => {
-      let key$1 = key + "-" + to_string(index3);
+    (handlers3, element2, index4) => {
+      let key$1 = key + "-" + to_string(index4);
       return do_handlers(element2, handlers3, key$1);
     }
   );
@@ -2572,6 +2777,15 @@ function style(properties) {
       }
     )
   );
+}
+function id(name) {
+  return attribute("id", name);
+}
+function title(name) {
+  return attribute("title", name);
+}
+function type_(name) {
+  return attribute("type", name);
 }
 function height(val) {
   return property("height", val);
@@ -3026,13 +3240,13 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {Gleam.Ok<(action: Lustre.Action<Lustre.Client, Msg>>) => void>}
    */
-  static start({ init: init3, update: update2, view: view2 }, selector, flags) {
+  static start({ init: init3, update: update3, view: view2 }, selector, flags) {
     if (!is_browser())
       return new Error(new NotABrowser());
     const root = selector instanceof HTMLElement ? selector : document.querySelector(selector);
     if (!root)
       return new Error(new ElementNotFound(selector));
-    const app = new _LustreClientApplication(root, init3(flags), update2, view2);
+    const app = new _LustreClientApplication(root, init3(flags), update3, view2);
     return new Ok((action) => app.send(action));
   }
   /**
@@ -3043,10 +3257,10 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {LustreClientApplication}
    */
-  constructor(root, [init3, effects], update2, view2) {
+  constructor(root, [init3, effects], update3, view2) {
     this.root = root;
     this.#model = init3;
-    this.#update = update2;
+    this.#update = update3;
     this.#view = view2;
     this.#tickScheduled = window.setTimeout(
       () => this.#tick(effects.all.toArray(), true),
@@ -3162,18 +3376,18 @@ var LustreClientApplication = class _LustreClientApplication {
 };
 var start = LustreClientApplication.start;
 var LustreServerApplication = class _LustreServerApplication {
-  static start({ init: init3, update: update2, view: view2, on_attribute_change }, flags) {
+  static start({ init: init3, update: update3, view: view2, on_attribute_change }, flags) {
     const app = new _LustreServerApplication(
       init3(flags),
-      update2,
+      update3,
       view2,
       on_attribute_change
     );
     return new Ok((action) => app.send(action));
   }
-  constructor([model, effects], update2, view2, on_attribute_change) {
+  constructor([model, effects], update3, view2, on_attribute_change) {
     this.#model = model;
-    this.#update = update2;
+    this.#update = update3;
     this.#view = view2;
     this.#html = view2(model);
     this.#onAttributeChange = on_attribute_change;
@@ -3276,10 +3490,10 @@ var is_browser = () => globalThis.window && window.document;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init3, update2, view2, on_attribute_change) {
+  constructor(init3, update3, view2, on_attribute_change) {
     super();
     this.init = init3;
-    this.update = update2;
+    this.update = update3;
     this.view = view2;
     this.on_attribute_change = on_attribute_change;
   }
@@ -3292,8 +3506,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init3, update2, view2) {
-  return new App(init3, update2, view2, new None());
+function application(init3, update3, view2) {
+  return new App(init3, update3, view2, new None());
 }
 function dispatch(msg) {
   return new Dispatch(msg);
@@ -3315,6 +3529,9 @@ function div(attrs, children2) {
 function canvas(attrs) {
   return element("canvas", attrs, toList([]));
 }
+function input(attrs) {
+  return element("input", attrs, toList([]));
+}
 
 // build/dev/javascript/gleamness/emulation/types.mjs
 var CPU = class extends CustomType {
@@ -3331,9 +3548,10 @@ var CPU = class extends CustomType {
   }
 };
 var Bus = class extends CustomType {
-  constructor(cpu_vram) {
+  constructor(cpu_vram, rom) {
     super();
     this.cpu_vram = cpu_vram;
+    this.rom = rom;
   }
 };
 var CpuInstruction = class extends CustomType {
@@ -3344,6 +3562,21 @@ var CpuInstruction = class extends CustomType {
     this.bytes = bytes;
     this.cycles = cycles;
     this.addressing_mode = addressing_mode;
+  }
+};
+var Vertical = class extends CustomType {
+};
+var Horizontal = class extends CustomType {
+};
+var FourScreen = class extends CustomType {
+};
+var Rom = class extends CustomType {
+  constructor(prg_rom, chr_rom, mapper, screen_mirroring) {
+    super();
+    this.prg_rom = prg_rom;
+    this.chr_rom = chr_rom;
+    this.mapper = mapper;
+    this.screen_mirroring = screen_mirroring;
   }
 };
 var Accumulator = class extends CustomType {
@@ -3383,6 +3616,30 @@ var stack_base = 256;
 var stack_reset = 255;
 
 // build/dev/javascript/gleamness/emulation/bus.mjs
+function new_with_rom(rom) {
+  return new Bus(repeat2(0, 8192), new Some(rom));
+}
+var prg_rom_start = 32768;
+function read_prg_rom(bus, addr) {
+  let mapped_addr = addr - prg_rom_start;
+  let $ = bus.rom;
+  if ($ instanceof None) {
+    return new Ok(0);
+  } else {
+    let rom = $[0];
+    let prg_length = length4(rom.prg_rom);
+    let effective_addr = (() => {
+      let $1 = prg_length === 16384 && mapped_addr >= 16384;
+      if ($1) {
+        return remainderInt(mapped_addr, 16384);
+      } else {
+        return mapped_addr;
+      }
+    })();
+    let _pipe = get(rom.prg_rom, effective_addr);
+    return replace_error(_pipe, void 0);
+  }
+}
 function mem_read(bus, addr) {
   if (addr >= 0 && addr <= 8191) {
     let addr$1 = addr;
@@ -3393,6 +3650,9 @@ function mem_read(bus, addr) {
     let addr$1 = addr;
     let $ = bitwise_and(addr$1, 8199);
     return new Ok(0);
+  } else if (addr >= 32768 && addr <= 65535) {
+    let addr$1 = addr;
+    return read_prg_rom(bus, addr$1);
   } else {
     return new Ok(0);
   }
@@ -3401,12 +3661,31 @@ function mem_write(bus, addr, data) {
   if (addr >= 0 && addr <= 8191) {
     let addr$1 = addr;
     let mirror_down_addr = bitwise_and(addr$1, 2047);
-    let new_vram = try_set(bus.cpu_vram, mirror_down_addr, data);
-    return new Ok(new Bus(new_vram));
+    let $ = set(bus.cpu_vram, mirror_down_addr, data);
+    if (!$.isOk()) {
+      throw makeError(
+        "let_assert",
+        "emulation/bus",
+        65,
+        "mem_write",
+        "Pattern match failed, no pattern matched the value.",
+        { value: $ }
+      );
+    }
+    let new_vram = $[0];
+    return new Ok(
+      (() => {
+        let _record = bus;
+        return new Bus(new_vram, _record.rom);
+      })()
+    );
   } else if (addr >= 8192 && addr <= 16383) {
     let addr$1 = addr;
     let $ = bitwise_and(addr$1, 8199);
     return new Ok(bus);
+  } else if (addr >= 32768 && addr <= 65535) {
+    let addr$1 = addr;
+    return new Error(void 0);
   } else {
     return new Ok(bus);
   }
@@ -3426,136 +3705,12 @@ function mem_read_u16(bus, addr) {
     return new Error(void 0);
   }
 }
-function mem_write_u16(bus, addr, data) {
-  let lo = bitwise_and(data, 255);
-  let hi = bitwise_shift_right(data, 8);
-  let $ = mem_write(bus, addr, lo);
-  if ($.isOk()) {
-    let new_bus = $[0];
-    return mem_write(new_bus, addr + 1, hi);
-  } else {
-    return new Error(void 0);
-  }
-}
-
-// build/dev/javascript/gleamness/emulation/memory.mjs
-function init_memory() {
-  return repeat2(0, 65535);
-}
-function read(cpu, address) {
-  let $ = address < 8192;
-  if ($) {
-    return mem_read(cpu.bus, address);
-  } else {
-    let _pipe = get(cpu.memory, address);
-    return replace_error(_pipe, void 0);
-  }
-}
-function write(cpu, address, data) {
-  let $ = address < 8192;
-  if ($) {
-    let $1 = mem_write(cpu.bus, address, data);
-    if ($1.isOk()) {
-      let new_bus = $1[0];
-      return new Ok(
-        (() => {
-          let _record = cpu;
-          return new CPU(
-            _record.register_a,
-            _record.register_x,
-            _record.register_y,
-            _record.status,
-            _record.program_counter,
-            _record.stack_pointer,
-            _record.memory,
-            new_bus
-          );
-        })()
-      );
-    } else {
-      return new Error(void 0);
-    }
-  } else {
-    let new_memory = try_set(cpu.memory, address, data);
-    return new Ok(
-      (() => {
-        let _record = cpu;
-        return new CPU(
-          _record.register_a,
-          _record.register_x,
-          _record.register_y,
-          _record.status,
-          _record.program_counter,
-          _record.stack_pointer,
-          new_memory,
-          _record.bus
-        );
-      })()
-    );
-  }
-}
-function read_u16(cpu, address) {
-  let $ = address < 8192;
-  if ($) {
-    return mem_read_u16(cpu.bus, address);
-  } else {
-    let $1 = read(cpu, address);
-    if ($1.isOk()) {
-      let lo = $1[0];
-      let $2 = read(cpu, address + 1);
-      if ($2.isOk()) {
-        let hi = $2[0];
-        return new Ok(bitwise_or(bitwise_shift_left(hi, 8), lo));
-      } else {
-        return new Error(void 0);
-      }
-    } else {
-      return new Error(void 0);
-    }
-  }
-}
-function write_u16(cpu, address, data) {
-  let $ = address < 8192;
-  if ($) {
-    let $1 = mem_write_u16(cpu.bus, address, data);
-    if ($1.isOk()) {
-      let new_bus = $1[0];
-      return new Ok(
-        (() => {
-          let _record = cpu;
-          return new CPU(
-            _record.register_a,
-            _record.register_x,
-            _record.register_y,
-            _record.status,
-            _record.program_counter,
-            _record.stack_pointer,
-            _record.memory,
-            new_bus
-          );
-        })()
-      );
-    } else {
-      return new Error(void 0);
-    }
-  } else {
-    let lo = bitwise_and(data, 255);
-    let hi = bitwise_shift_right(data, 8);
-    let $1 = write(cpu, address, lo);
-    if ($1.isOk()) {
-      let new_cpu = $1[0];
-      return write(new_cpu, address + 1, hi);
-    } else {
-      return new Error(void 0);
-    }
-  }
-}
 
 // build/dev/javascript/gleamness/emulation/addressing.mjs
-function fetch_byte(cpu, program) {
-  let result = get(program, cpu.program_counter);
-  if (result.isOk()) {
-    let byte = result[0];
+function fetch_byte(cpu) {
+  let $ = mem_read(cpu.bus, cpu.program_counter);
+  if ($.isOk()) {
+    let byte = $[0];
     let new_cpu = (() => {
       let _record = cpu;
       return new CPU(
@@ -3574,17 +3729,17 @@ function fetch_byte(cpu, program) {
     return [cpu, 0];
   }
 }
-function fetch_word(cpu, program) {
-  let $ = fetch_byte(cpu, program);
+function fetch_word(cpu) {
+  let $ = fetch_byte(cpu);
   let cpu_after_lo = $[0];
   let lo = $[1];
-  let $1 = fetch_byte(cpu_after_lo, program);
+  let $1 = fetch_byte(cpu_after_lo);
   let cpu_after_hi = $1[0];
   let hi = $1[1];
   let word = bitwise_or(bitwise_shift_left(hi, 8), lo);
   return [cpu_after_hi, word];
 }
-function get_operand_address(cpu, program, mode) {
+function get_operand_address(cpu, mode) {
   if (mode instanceof Immediate) {
     let addr = cpu.program_counter;
     let new_cpu = (() => {
@@ -3602,7 +3757,7 @@ function get_operand_address(cpu, program, mode) {
     })();
     return [new_cpu, addr];
   } else if (mode instanceof ZeroPage) {
-    let $ = fetch_byte(cpu, program);
+    let $ = fetch_byte(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
@@ -3610,7 +3765,7 @@ function get_operand_address(cpu, program, mode) {
       return [new_cpu, zero_page_addr];
     }
   } else if (mode instanceof ZeroPageX) {
-    let $ = fetch_byte(cpu, program);
+    let $ = fetch_byte(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
@@ -3618,7 +3773,7 @@ function get_operand_address(cpu, program, mode) {
       return [new_cpu, wrapped_addr];
     }
   } else if (mode instanceof ZeroPageY) {
-    let $ = fetch_byte(cpu, program);
+    let $ = fetch_byte(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
@@ -3626,14 +3781,14 @@ function get_operand_address(cpu, program, mode) {
       return [new_cpu, wrapped_addr];
     }
   } else if (mode instanceof Absolute) {
-    let $ = fetch_word(cpu, program);
+    let $ = fetch_word(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
       return [new_cpu, addr];
     }
   } else if (mode instanceof AbsoluteX) {
-    let $ = fetch_word(cpu, program);
+    let $ = fetch_word(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
@@ -3641,7 +3796,7 @@ function get_operand_address(cpu, program, mode) {
       return [new_cpu, final_addr];
     }
   } else if (mode instanceof AbsoluteY) {
-    let $ = fetch_word(cpu, program);
+    let $ = fetch_word(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
@@ -3649,7 +3804,7 @@ function get_operand_address(cpu, program, mode) {
       return [new_cpu, final_addr];
     }
   } else if (mode instanceof Indirect) {
-    let $ = fetch_word(cpu, program);
+    let $ = fetch_word(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
@@ -3662,10 +3817,10 @@ function get_operand_address(cpu, program, mode) {
           return addr + 1;
         }
       })();
-      let $1 = read(new_cpu, lo_byte_addr);
+      let $1 = mem_read(new_cpu.bus, lo_byte_addr);
       if ($1.isOk()) {
         let lo = $1[0];
-        let $2 = read(new_cpu, hi_byte_addr);
+        let $2 = mem_read(new_cpu.bus, hi_byte_addr);
         if ($2.isOk()) {
           let hi = $2[0];
           let final_addr = bitwise_or(bitwise_shift_left(hi, 8), lo);
@@ -3678,15 +3833,18 @@ function get_operand_address(cpu, program, mode) {
       }
     }
   } else if (mode instanceof IndirectX) {
-    let $ = fetch_byte(cpu, program);
+    let $ = fetch_byte(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
       let wrapped_addr = bitwise_and(addr + cpu.register_x, 255);
-      let $1 = read(new_cpu, wrapped_addr);
+      let $1 = mem_read(new_cpu.bus, wrapped_addr);
       if ($1.isOk()) {
         let lo = $1[0];
-        let $2 = read(new_cpu, bitwise_and(wrapped_addr + 1, 255));
+        let $2 = mem_read(
+          new_cpu.bus,
+          bitwise_and(wrapped_addr + 1, 255)
+        );
         if ($2.isOk()) {
           let hi = $2[0];
           let final_addr = bitwise_or(bitwise_shift_left(hi, 8), lo);
@@ -3699,14 +3857,14 @@ function get_operand_address(cpu, program, mode) {
       }
     }
   } else if (mode instanceof IndirectY) {
-    let $ = fetch_byte(cpu, program);
+    let $ = fetch_byte(cpu);
     {
       let new_cpu = $[0];
       let addr = $[1];
-      let $1 = read(new_cpu, addr);
+      let $1 = mem_read(new_cpu.bus, addr);
       if ($1.isOk()) {
         let lo = $1[0];
-        let $2 = read(new_cpu, bitwise_and(addr + 1, 255));
+        let $2 = mem_read(new_cpu.bus, bitwise_and(addr + 1, 255));
         if ($2.isOk()) {
           let hi = $2[0];
           let base_addr = bitwise_or(bitwise_shift_left(hi, 8), lo);
@@ -3720,7 +3878,7 @@ function get_operand_address(cpu, program, mode) {
       }
     }
   } else if (mode instanceof Relative) {
-    let $ = fetch_byte(cpu, program);
+    let $ = fetch_byte(cpu);
     {
       let new_cpu = $[0];
       let offset = $[1];
@@ -3741,16 +3899,21 @@ function get_operand_address(cpu, program, mode) {
     return [cpu, 0];
   }
 }
-function get_operand_value(cpu, program, mode, operand_addr) {
+function get_operand_value(cpu, mode, operand_addr) {
   if (mode instanceof Immediate) {
-    let _pipe = get(program, operand_addr);
-    return unwrap(_pipe, 0);
+    let $ = mem_read(cpu.bus, operand_addr);
+    if ($.isOk()) {
+      let value = $[0];
+      return value;
+    } else {
+      return 0;
+    }
   } else if (mode instanceof Accumulator) {
     return cpu.register_a;
   } else if (mode instanceof NoneAddressing) {
     return 0;
   } else {
-    let $ = read(cpu, operand_addr);
+    let $ = mem_read(cpu.bus, operand_addr);
     if ($.isOk()) {
       let value = $[0];
       return value;
@@ -4022,6 +4185,40 @@ function update_overflow_and_carry_flags(cpu, overflow_set, carry_set) {
     }
   })();
   return update_carry_flag(cpu$1, carry_set);
+}
+
+// build/dev/javascript/gleamness/emulation/memory.mjs
+function init_memory() {
+  return repeat2(0, 65535);
+}
+function read(cpu, addr) {
+  return mem_read(cpu.bus, addr);
+}
+function write(cpu, addr, data) {
+  let $ = mem_write(cpu.bus, addr, data);
+  if ($.isOk()) {
+    let new_bus = $[0];
+    return new Ok(
+      (() => {
+        let _record = cpu;
+        return new CPU(
+          _record.register_a,
+          _record.register_x,
+          _record.register_y,
+          _record.status,
+          _record.program_counter,
+          _record.stack_pointer,
+          _record.memory,
+          new_bus
+        );
+      })()
+    );
+  } else {
+    return new Error(void 0);
+  }
+}
+function read_u16(cpu, addr) {
+  return mem_read_u16(cpu.bus, addr);
 }
 
 // build/dev/javascript/gleamness/emulation/instructions/arithmetic.mjs
@@ -5241,7 +5438,19 @@ function get_new_cpu() {
     0,
     stack_reset,
     init_memory(),
-    new Bus(repeat2(0, 8192))
+    new Bus(repeat2(0, 8192), new None())
+  );
+}
+function get_new_cpu_with_rom(rom) {
+  return new CPU(
+    0,
+    0,
+    0,
+    flag_unused,
+    0,
+    stack_reset,
+    init_memory(),
+    new_with_rom(rom)
   );
 }
 function reset(cpu) {
@@ -5276,36 +5485,6 @@ function reset(cpu) {
         );
       })()
     );
-  } else {
-    return new Error(void 0);
-  }
-}
-function load_at_address(cpu, program, start_address) {
-  let length4 = length3(program);
-  return fold5(
-    range(0, length4 - 1),
-    new Ok(cpu),
-    (acc, index3) => {
-      if (!acc.isOk()) {
-        return acc;
-      } else {
-        let current_cpu = acc[0];
-        let $ = get(program, index3);
-        if ($.isOk()) {
-          let byte = $[0];
-          return write(current_cpu, start_address + index3, byte);
-        } else {
-          return new Error(void 0);
-        }
-      }
-    }
-  );
-}
-function load(cpu, program) {
-  let $ = load_at_address(cpu, program, 1536);
-  if ($.isOk()) {
-    let cpu_with_program = $[0];
-    return write_u16(cpu_with_program, 65532, 1536);
   } else {
     return new Error(void 0);
   }
@@ -5456,7 +5635,7 @@ function execute_instruction(cpu, instruction, operand_addr, operand_value) {
 }
 function run2(cpu, callback) {
   let cpu$1 = callback(cpu);
-  let $ = get(cpu$1.bus.cpu_vram, cpu$1.program_counter);
+  let $ = mem_read(cpu$1.bus, cpu$1.program_counter);
   if (!$.isOk()) {
     return cpu$1;
   } else {
@@ -5477,16 +5656,11 @@ function run2(cpu, callback) {
           _record.bus
         );
       })();
-      let $1 = get_operand_address(
-        cpu$2,
-        cpu$2.bus.cpu_vram,
-        instr.addressing_mode
-      );
+      let $1 = get_operand_address(cpu$2, instr.addressing_mode);
       let cpu_after_fetch = $1[0];
       let operand_addr = $1[1];
       let operand_value = get_operand_value(
         cpu_after_fetch,
-        cpu$2.bus.cpu_vram,
         instr.addressing_mode,
         operand_addr
       );
@@ -5497,7 +5671,178 @@ function run2(cpu, callback) {
         operand_value
       );
     } else {
-      return cpu$1;
+      let _record = cpu$1;
+      return new CPU(
+        _record.register_a,
+        _record.register_x,
+        _record.register_y,
+        _record.status,
+        cpu$1.program_counter + 1,
+        _record.stack_pointer,
+        _record.memory,
+        _record.bus
+      );
+    }
+  }
+}
+
+// build/dev/javascript/gleamness/emulation/rom.mjs
+function check_nes_tag(raw) {
+  let $ = length4(raw);
+  if ($ < 4) {
+    let len = $;
+    return false;
+  } else {
+    let $1 = get(raw, 0);
+    let $2 = get(raw, 1);
+    let $3 = get(raw, 2);
+    let $4 = get(raw, 3);
+    if ($1.isOk() && $2.isOk() && $3.isOk() && $4.isOk()) {
+      let n = $1[0];
+      let e = $2[0];
+      let s = $3[0];
+      let eof = $4[0];
+      return n === 78 && e === 69 && s === 83 && eof === 26;
+    } else {
+      return false;
+    }
+  }
+}
+function extract_rom_data(raw, prg_rom_start2, prg_rom_size, chr_rom_start, chr_rom_size) {
+  let raw_length = length4(raw);
+  let $ = raw_length >= chr_rom_start + chr_rom_size;
+  if (!$) {
+    return new Error("ROM file is too small");
+  } else {
+    let $1 = slice(raw, prg_rom_start2, prg_rom_size);
+    if ($1.isOk()) {
+      let prg_rom = $1[0];
+      let $2 = slice(raw, chr_rom_start, chr_rom_size);
+      if ($2.isOk()) {
+        let chr_rom = $2[0];
+        return new Ok([prg_rom, chr_rom]);
+      } else {
+        return new Error("Failed to extract CHR ROM data");
+      }
+    } else {
+      return new Error("Failed to extract PRG ROM data");
+    }
+  }
+}
+var prg_rom_page_size = 16384;
+var chr_rom_page_size = 8192;
+function new$3(raw) {
+  let $ = check_nes_tag(raw);
+  if (!$) {
+    return new Error("File is not in iNES file format");
+  } else {
+    let mapper = (() => {
+      let $1 = get(raw, 7);
+      if ($1.isOk()) {
+        let byte7 = $1[0];
+        let $2 = get(raw, 6);
+        if ($2.isOk()) {
+          let byte6 = $2[0];
+          return bitwise_or(
+            bitwise_and(byte7, 240),
+            bitwise_shift_right(byte6, 4)
+          );
+        } else {
+          return 0;
+        }
+      } else {
+        return 0;
+      }
+    })();
+    let ines_ver = (() => {
+      let $1 = get(raw, 7);
+      if ($1.isOk()) {
+        let byte7 = $1[0];
+        return bitwise_and(bitwise_shift_right(byte7, 2), 3);
+      } else {
+        return 0;
+      }
+    })();
+    if (ines_ver === 0) {
+      let four_screen = (() => {
+        let $12 = get(raw, 6);
+        if ($12.isOk()) {
+          let byte6 = $12[0];
+          return bitwise_and(byte6, 8) !== 0;
+        } else {
+          return false;
+        }
+      })();
+      let vertical_mirroring = (() => {
+        let $12 = get(raw, 6);
+        if ($12.isOk()) {
+          let byte6 = $12[0];
+          return bitwise_and(byte6, 1) !== 0;
+        } else {
+          return false;
+        }
+      })();
+      let screen_mirroring = (() => {
+        if (four_screen) {
+          return new FourScreen();
+        } else if (!four_screen && vertical_mirroring) {
+          return new Vertical();
+        } else {
+          return new Horizontal();
+        }
+      })();
+      let prg_rom_size = (() => {
+        let $12 = get(raw, 4);
+        if ($12.isOk()) {
+          let byte4 = $12[0];
+          return byte4 * prg_rom_page_size;
+        } else {
+          return 0;
+        }
+      })();
+      let chr_rom_size = (() => {
+        let $12 = get(raw, 5);
+        if ($12.isOk()) {
+          let byte5 = $12[0];
+          return byte5 * chr_rom_page_size;
+        } else {
+          return 0;
+        }
+      })();
+      let skip_trainer = (() => {
+        let $12 = get(raw, 6);
+        if ($12.isOk()) {
+          let byte6 = $12[0];
+          return bitwise_and(byte6, 4) !== 0;
+        } else {
+          return false;
+        }
+      })();
+      let prg_rom_start2 = 16 + (() => {
+        if (skip_trainer) {
+          return 512;
+        } else {
+          return 0;
+        }
+      })();
+      let chr_rom_start = prg_rom_start2 + prg_rom_size;
+      let $1 = extract_rom_data(
+        raw,
+        prg_rom_start2,
+        prg_rom_size,
+        chr_rom_start,
+        chr_rom_size
+      );
+      if ($1.isOk()) {
+        let prg_rom = $1[0][0];
+        let chr_rom = $1[0][1];
+        return new Ok(new Rom(prg_rom, chr_rom, mapper, screen_mirroring));
+      } else {
+        let err = $1[0];
+        return new Error(err);
+      }
+    } else {
+      return new Error("NES2.0 format is not supported");
     }
   }
 }
@@ -5713,6 +6058,23 @@ function updateTextureWithFrame(texture, frameData, width2, height2) {
 function window_add_event_listener(name, handler) {
   window.addEventListener(name, handler);
 }
+function setup_file_input_listener(inputId, handler) {
+  setTimeout(() => {
+    const fileInput = document.querySelector(inputId);
+    if (!fileInput)
+      return;
+    fileInput.addEventListener("input", (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        console;
+        e.target.files[0].arrayBuffer().then((fileBuffer) => {
+          const fileData = new Uint8Array(fileBuffer);
+          const dataArray = Array.from(fileData);
+          handler(dataArray);
+        });
+      }
+    });
+  }, 0);
+}
 
 // build/dev/javascript/gleamness/gleamness.mjs
 var Model2 = class extends CustomType {
@@ -5752,6 +6114,12 @@ var ContextReady = class extends CustomType {
 };
 var Mounted = class extends CustomType {
 };
+var LoadRom = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
 function every2(interval, tick) {
   return from(
     (dispatch2) => {
@@ -5780,347 +6148,11 @@ function render_effect(msg) {
     }
   );
 }
-function get_snake_game() {
-  return from_list2(
-    toList([
-      32,
-      6,
-      6,
-      32,
-      56,
-      6,
-      32,
-      13,
-      6,
-      32,
-      42,
-      6,
-      96,
-      169,
-      2,
-      133,
-      2,
-      169,
-      4,
-      133,
-      3,
-      169,
-      17,
-      133,
-      16,
-      169,
-      16,
-      133,
-      18,
-      169,
-      15,
-      133,
-      20,
-      169,
-      4,
-      133,
-      17,
-      133,
-      19,
-      133,
-      21,
-      96,
-      165,
-      254,
-      133,
-      0,
-      165,
-      254,
-      41,
-      3,
-      24,
-      105,
-      2,
-      133,
-      1,
-      96,
-      32,
-      77,
-      6,
-      32,
-      141,
-      6,
-      32,
-      195,
-      6,
-      32,
-      25,
-      7,
-      32,
-      32,
-      7,
-      32,
-      45,
-      7,
-      76,
-      56,
-      6,
-      165,
-      255,
-      201,
-      119,
-      240,
-      13,
-      201,
-      100,
-      240,
-      20,
-      201,
-      115,
-      240,
-      27,
-      201,
-      97,
-      240,
-      34,
-      96,
-      169,
-      4,
-      36,
-      2,
-      208,
-      38,
-      169,
-      1,
-      133,
-      2,
-      96,
-      169,
-      8,
-      36,
-      2,
-      208,
-      27,
-      169,
-      2,
-      133,
-      2,
-      96,
-      169,
-      1,
-      36,
-      2,
-      208,
-      16,
-      169,
-      4,
-      133,
-      2,
-      96,
-      169,
-      2,
-      36,
-      2,
-      208,
-      5,
-      169,
-      8,
-      133,
-      2,
-      96,
-      96,
-      32,
-      148,
-      6,
-      32,
-      168,
-      6,
-      96,
-      165,
-      0,
-      197,
-      16,
-      208,
-      13,
-      165,
-      1,
-      197,
-      17,
-      208,
-      7,
-      230,
-      3,
-      230,
-      3,
-      32,
-      42,
-      6,
-      96,
-      162,
-      2,
-      181,
-      16,
-      197,
-      16,
-      208,
-      6,
-      181,
-      17,
-      197,
-      17,
-      240,
-      9,
-      232,
-      232,
-      228,
-      3,
-      240,
-      6,
-      76,
-      170,
-      6,
-      76,
-      53,
-      7,
-      96,
-      166,
-      3,
-      202,
-      138,
-      181,
-      16,
-      149,
-      18,
-      202,
-      16,
-      249,
-      165,
-      2,
-      74,
-      176,
-      9,
-      74,
-      176,
-      25,
-      74,
-      176,
-      31,
-      74,
-      176,
-      47,
-      165,
-      16,
-      56,
-      233,
-      32,
-      133,
-      16,
-      144,
-      1,
-      96,
-      198,
-      17,
-      169,
-      1,
-      197,
-      17,
-      240,
-      40,
-      96,
-      230,
-      16,
-      169,
-      31,
-      36,
-      16,
-      240,
-      31,
-      96,
-      165,
-      16,
-      24,
-      105,
-      32,
-      133,
-      16,
-      176,
-      1,
-      96,
-      230,
-      17,
-      169,
-      6,
-      197,
-      17,
-      240,
-      12,
-      96,
-      198,
-      16,
-      165,
-      16,
-      41,
-      31,
-      201,
-      31,
-      240,
-      1,
-      96,
-      76,
-      53,
-      7,
-      160,
-      0,
-      165,
-      254,
-      145,
-      0,
-      96,
-      166,
-      3,
-      169,
-      0,
-      129,
-      16,
-      162,
-      0,
-      169,
-      1,
-      129,
-      16,
-      96,
-      162,
-      0,
-      234,
-      234,
-      202,
-      208,
-      251,
-      96
-    ])
-  );
-}
 function init2(_) {
   let new_cpu = get_new_cpu();
-  let cpu_with_game = (() => {
-    let $2 = load(new_cpu, get_snake_game());
-    if ($2.isOk()) {
-      let loaded_game_cpu = $2[0];
-      return loaded_game_cpu;
-    } else {
-      return new_cpu;
-    }
-  })();
-  let $ = reset(cpu_with_game);
-  if (!$.isOk()) {
-    throw makeError(
-      "let_assert",
-      "gleamness",
-      126,
-      "init",
-      "Pattern match failed, no pattern matched the value.",
-      { value: $ }
-    );
-  }
-  let cpu_reset = $[0];
   return [
     new Model2(
-      cpu_reset,
+      new_cpu,
       32,
       32,
       10,
@@ -6129,13 +6161,7 @@ function init2(_) {
       new None(),
       new_screen_state()
     ),
-    batch(
-      toList([
-        every2(1, new CpuTick()),
-        every2(16, new ScreenTick()),
-        render_effect(new Mounted())
-      ])
-    )
+    none()
   ];
 }
 function do_cpu_cycles(loop$initial_cpu, loop$count) {
@@ -6154,7 +6180,7 @@ function do_cpu_cycles(loop$initial_cpu, loop$count) {
     }
   }
 }
-function update(model, msg) {
+function update2(model, msg) {
   if (msg instanceof Mounted) {
     return [model, init_canvas()];
   } else if (msg instanceof CpuTick) {
@@ -6199,7 +6225,7 @@ function update(model, msg) {
       if ($2) {
         updateTextureWithFrame(
           texture,
-          to_list(new_screen_state2.frame),
+          to_list2(new_screen_state2.frame),
           model.window_width,
           model.window_height
         );
@@ -6258,7 +6284,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            213,
+            184,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6272,7 +6298,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            217,
+            188,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6286,7 +6312,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            221,
+            192,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6300,7 +6326,7 @@ function update(model, msg) {
           throw makeError(
             "let_assert",
             "gleamness",
-            225,
+            196,
             "update",
             "Pattern match failed, no pattern matched the value.",
             { value: $ }
@@ -6328,7 +6354,7 @@ function update(model, msg) {
       })(),
       none()
     ];
-  } else {
+  } else if (msg instanceof KeyUp) {
     let key = msg[0];
     let updated_keys = filter(
       model.key_pressed,
@@ -6352,6 +6378,46 @@ function update(model, msg) {
       })(),
       none()
     ];
+  } else {
+    let rom_data = msg[0];
+    let $ = new$3(from_list2(rom_data));
+    if ($.isOk()) {
+      let parsed_rom = $[0];
+      let new_cpu = get_new_cpu_with_rom(parsed_rom);
+      let reset_cpu = (() => {
+        let $1 = reset(new_cpu);
+        if ($1.isOk()) {
+          let reset2 = $1[0];
+          return reset2;
+        } else {
+          return new_cpu;
+        }
+      })();
+      return [
+        (() => {
+          let _record = model;
+          return new Model2(
+            reset_cpu,
+            _record.window_width,
+            _record.window_height,
+            _record.scale,
+            _record.key_pressed,
+            _record.canvas_ctx,
+            _record.texture,
+            _record.screen_state
+          );
+        })(),
+        batch(
+          toList([
+            every2(1, new CpuTick()),
+            every2(16, new ScreenTick()),
+            render_effect(new Mounted())
+          ])
+        )
+      ];
+    } else {
+      return [model, none()];
+    }
   }
 }
 function handle_key_event(event, dispatch2) {
@@ -6376,18 +6442,31 @@ function view(model) {
   return div(
     toList([style(toList([["outline", "none"]]))]),
     toList([
-      canvas(toList([width(width2), height(height2)]))
+      canvas(
+        toList([
+          id("canvas"),
+          width(width2),
+          height(height2)
+        ])
+      ),
+      input(
+        toList([
+          id("input_file"),
+          type_("file"),
+          title("Load ROM")
+        ])
+      )
     ])
   );
 }
 function main() {
-  let app = application(init2, update, view);
+  let app = application(init2, update2, view);
   let $ = start2(app, "#app", void 0);
   if (!$.isOk()) {
     throw makeError(
       "let_assert",
       "gleamness",
-      285,
+      295,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }
@@ -6416,6 +6495,14 @@ function main() {
           return to_runtime(_pipe);
         }
       );
+    }
+  );
+  setup_file_input_listener(
+    "#input_file",
+    (rom_data) => {
+      let msg = new LoadRom(to_list(rom_data));
+      let _pipe = dispatch(msg);
+      return to_runtime(_pipe);
     }
   );
   return void 0;

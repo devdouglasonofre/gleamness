@@ -54,3 +54,21 @@ export function updateTextureWithFrame(texture, frameData, width, height) {
 export function window_add_event_listener(name, handler) {
   window.addEventListener(name, handler);
 }
+
+export function setup_file_input_listener(inputId, handler) {
+  setTimeout(() => {
+    const fileInput = document.querySelector(inputId);
+    if (!fileInput) return;
+    
+    fileInput.addEventListener("input", (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        console
+        e.target.files[0].arrayBuffer().then((fileBuffer) => {
+          const fileData = new Uint8Array(fileBuffer);
+          const dataArray = Array.from(fileData);
+          handler(dataArray);
+        });
+      }
+    });
+  }, 0);
+}
